@@ -44,10 +44,13 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
         transform: scale(1.02);
     }
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- SESSION STATE FOR STOPWATCH ---
+# --- SESSION STATE ---
 if 'session_active' not in st.session_state:
     st.session_state.session_active = False
 if 'start_time' not in st.session_state:
@@ -56,8 +59,10 @@ if 'current_subject' not in st.session_state:
     st.session_state.current_subject = ""
 if 'current_task' not in st.session_state:
     st.session_state.current_task = ""
+if 'zen_mode' not in st.session_state:
+    st.session_state.zen_mode = False
 
-# --- FETCH DATA FROM GOOGLE SHEETS ---
+# --- FETCH DATA ---
 @st.cache_data(ttl=60)
 def load_data():
     try:
@@ -73,18 +78,29 @@ def load_data():
 
 db = load_data()
 
-st.sidebar.title("⚡ SYSTEM MENU")
-page = st.sidebar.radio("Navigation", ["Live Session", "Daily Timeline", "Deep Analytics"])
+# --- ZEN MODE UI OVERRIDE ---
+if st.session_state.session_active and st.session_state.zen_mode:
+    st.markdown("""
+        <style>
+        /* Hides Sidebar and Top Header for true Full Screen */
+        [data-testid="stSidebar"] { display: none !important; }
+        [data-testid="collapsedControl"] { display: none !important; }
+        header[data-testid="stHeader"] { display: none !important; }
+        .block-container { padding-top: 2rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    st.sidebar.title("⚡ SYSTEM MENU")
+    page = st.sidebar.radio("Navigation", ["Live Session", "Daily Timeline", "Deep Analytics"])
 
 # ==========================================
-# PAGE 1: LIVE SESSION (STOPWATCH MODE)
+# PAGE 1: LIVE SESSION
 # ==========================================
-if page == "Live Session":
+if 'page' not in locals() or page == "Live Session" or (st.session_state.session_active and st.session_state.zen_mode):
     
     if not st.session_state.session_active:
         st.markdown("<h1 style='text-align: center; color: #00f2fe;'>START DEEP WORK</h1>", unsafe_allow_html=True)
         
-        # Updated JEE Subjects
         subject = st.selectbox("Select Subject", [
             "Physical Chemistry", 
             "Organic Chemistry", 
@@ -94,9 +110,14 @@ if page == "Live Session":
             "Mock Test / Revision"
         ])
         
-        task_notes = st.text_input("What is the exact goal for this session?", placeholder="e.g., Aldol Condensation mechanisms")
+        task_notes = st.text_input("Session Goal", placeholder="e.g., Solving HC Verma Chapter 8")
         
+        # Zen Mode Toggle
+        zen_toggle = st.toggle("🌌 Enable Zen Mode (Hides all menus during session)")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("START STOPWATCH"):
+            st.session_state.zen_mode = zen_toggle
             st.session_state.session_active = True
             st.session_state.start_time = time.time()
             st.session_state.current_subject = subject
@@ -106,10 +127,60 @@ if page == "Live Session":
     else:
         st.markdown(f"<h3 style='text-align: center; color: #aaaaaa;'>Focusing on: {st.session_state.current_subject}</h3>", unsafe_allow_html=True)
         
-        # Inject Custom HTML/JS for the Live OLED Clock
+        # --- CUSTOM FLIP CLOCK UI ---
         start_time_ms = int(st.session_state.start_time * 1000)
-        clock_html = f"""
-        <div id="clock" style="font-family: monospace; font-size: 100px; text-align: center; color: #4facfe; text-shadow: 0 0 20px #4facfe; background: #000; padding: 20px;">00:00:00</div>
+        flip_clock_html = f"""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Inter:wght@400;700&display=swap');
+        body {{ background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }}
+        .flip-container {{ display: flex; gap: 20px; }}
+        .flip-box {{
+            background: #0f0f0f;
+            border: 2px solid #222;
+            border-radius: 12px;
+            padding: 20px 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.1);
+            min-width: 150px;
+            text-align: center;
+        }}
+        /* The horizontal split line to simulate flip cards */
+        .flip-box::after {{
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; width: 100%; height: 3px;
+            background: #000;
+            transform: translateY(-50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }}
+        .flip-number {{
+            font-family: 'Oswald', sans-serif;
+            font-size: 120px;
+            font-weight: 700;
+            color: #00f2fe;
+            line-height: 1;
+            margin: 0;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+        }}
+        .flip-label {{
+            margin-top: 15px;
+            font-family: 'Inter', sans-serif;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 14px;
+            font-weight: bold;
+        }}
+        </style>
+        
+        <div style="width: 100%; display: flex; justify-content: center; margin-top: 40px;">
+            <div class="flip-container">
+                <div class="flip-box"><div class="flip-number" id="h">00</div><div class="flip-label">HOURS</div></div>
+                <div class="flip-box"><div class="flip-number" id="m">00</div><div class="flip-label">MINUTES</div></div>
+                <div class="flip-box"><div class="flip-number" id="s">00</div><div class="flip-label">SECONDS</div></div>
+            </div>
+        </div>
+
         <script>
             var startTime = {start_time_ms};
             setInterval(function() {{
@@ -119,29 +190,24 @@ if page == "Live Session":
                 var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 var seconds = Math.floor((distance % (1000 * 60)) / 1000);
                 
-                hours = (hours < 10) ? "0" + hours : hours;
-                minutes = (minutes < 10) ? "0" + minutes : minutes;
-                seconds = (seconds < 10) ? "0" + seconds : seconds;
-                
-                document.getElementById("clock").innerHTML = hours + ":" + minutes + ":" + seconds;
+                document.getElementById("h").innerText = (hours < 10) ? "0" + hours : hours;
+                document.getElementById("m").innerText = (minutes < 10) ? "0" + minutes : minutes;
+                document.getElementById("s").innerText = (seconds < 10) ? "0" + seconds : seconds;
             }}, 1000);
         </script>
         """
-        components.html(clock_html, height=180)
+        components.html(flip_clock_html, height=350)
         
         st.write("---")
         
-        if st.button("⏹️ STOP & LOG DATA"):
-            # Calculate total time
+        if st.button("⏹️ END SESSION & LOG DATA"):
             end_time = time.time()
             elapsed_seconds = end_time - st.session_state.start_time
-            duration_minutes = round(elapsed_seconds / 60, 2) # Get exact minutes
+            duration_minutes = round(elapsed_seconds / 60, 2)
             
-            # Get Time of Day
             hour = datetime.now().hour
             time_of_day = "Morning" if hour < 12 else "Afternoon" if hour < 18 else "Evening/Night"
             
-            # Save to Database
             new_data = {
                 "Date": datetime.now().strftime("%Y-%m-%d"),
                 "Subject": st.session_state.current_subject,
@@ -151,11 +217,11 @@ if page == "Live Session":
             }
             requests.post(SHEETDB_URL, json={"data": new_data})
             
-            # Reset System
             st.session_state.session_active = False
             st.session_state.start_time = 0
             st.session_state.current_subject = ""
             st.session_state.current_task = ""
+            st.session_state.zen_mode = False
             
             st.cache_data.clear()
             st.success(f"Boom. {duration_minutes} minutes logged to your database.")
@@ -166,7 +232,7 @@ if page == "Live Session":
 # ==========================================
 # PAGE 2: DAILY TIMELINE
 # ==========================================
-elif page == "Daily Timeline":
+elif page == "Daily Timeline" and not (st.session_state.session_active and st.session_state.zen_mode):
     st.title("📅 Today's Log")
     today = datetime.now().strftime("%Y-%m-%d")
     todays_data = db[db["Date"] == today]
@@ -181,7 +247,7 @@ elif page == "Daily Timeline":
 # ==========================================
 # PAGE 3: DEEP ANALYTICS
 # ==========================================
-elif page == "Deep Analytics":
+elif page == "Deep Analytics" and not (st.session_state.session_active and st.session_state.zen_mode):
     st.title("📊 The Command Center")
     
     if db.empty:
