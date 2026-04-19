@@ -3,14 +3,11 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 import time
-import requests
 import streamlit.components.v1 as components
+import io
 
 # --- CONFIG & OLED THEME ---
 st.set_page_config(page_title="NEON STUDY OS | JEE", page_icon="⚡", layout="wide")
-
-# 👇 PASTE YOUR SHEETDB URL HERE 👇
-SHEETDB_URL = "https://sheetdb.io/api/v1/9yl2rjjk03oto" 
 
 st.markdown("""
     <style>
@@ -50,7 +47,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- SESSION STATE (Upgraded with Pause Engine) ---
+# --- LOCAL SESSION DATABASE ---
+if 'db' not in st.session_state:
+    st.session_state.db = pd.DataFrame(columns=["Date", "Subject", "Task", "Duration", "Time"])
+
+# --- SESSION STATE (Live Timer) ---
 if 'session_active' not in st.session_state: st.session_state.session_active = False
 if 'session_paused' not in st.session_state: st.session_state.session_paused = False
 if 'start_time' not in st.session_state: st.session_state.start_time = 0.0
@@ -58,23 +59,6 @@ if 'accumulated_time' not in st.session_state: st.session_state.accumulated_time
 if 'current_subject' not in st.session_state: st.session_state.current_subject = ""
 if 'current_task' not in st.session_state: st.session_state.current_task = ""
 if 'zen_mode' not in st.session_state: st.session_state.zen_mode = False
-
-# --- FETCH DATA ---
-@st.cache_data(ttl=60)
-def load_data():
-    try:
-        response = requests.get(SHEETDB_URL)
-        data = response.json()
-        if data and "error" not in data:
-            df = pd.DataFrame(data)
-            df['Duration'] = pd.to_numeric(df['Duration']) 
-            df['Date'] = pd.to_datetime(df['Date'])
-            return df
-        return pd.DataFrame(columns=["Date", "Subject", "Task", "Duration", "Time"])
-    except:
-        return pd.DataFrame(columns=["Date", "Subject", "Task", "Duration", "Time"])
-
-db = load_data()
 
 # --- ZEN MODE UI OVERRIDE ---
 if st.session_state.session_active and st.session_state.zen_mode:
@@ -89,6 +73,42 @@ if st.session_state.session_active and st.session_state.zen_mode:
 else:
     st.sidebar.title("⚡ SYSTEM MENU")
     page = st.sidebar.radio("Navigation", ["Live Session", "Daily Timeline", "Deep Analytics"])
+    
+    st.sidebar.divider()
+    
+    # --- IMPORT / EXPORT VAULT ---
+    st.sidebar.title("💾 DATA VAULT")
+    st.sidebar.caption("Backup your data to a CSV file to sync across devices.")
+    
+    # EXPORT
+    if not st.session_state.db.empty:
+        csv = st.session_state.db.to_csv(index=False).encode('utf-8')
+        st.sidebar.download_button(
+            label="⬇️ Export Backup (CSV)",
+            data=csv,
+            file_name=f"JEE_Study_Backup_{datetime.now().strftime('%Y-%m-%d')}.csv",
+            mime="text/csv",
+        )
+    else:
+        st.sidebar.button("⬇️ Export Backup (CSV)", disabled=True, help="No data to export yet.")
+        
+    # IMPORT
+    uploaded_file = st.sidebar.file_uploader("⬆️ Import Backup", type=["csv"])
+    if uploaded_file is not None:
+        try:
+            imported_df = pd.read_csv(uploaded_file)
+            # Ensure proper columns exist
+            expected_cols = ["Date", "Subject", "Task", "Duration", "Time"]
+            if all(col in imported_df.columns for col in expected_cols):
+                imported_df['Date'] = pd.to_datetime(imported_df['Date'])
+                st.session_state.db = imported_df
+                st.sidebar.success("✅ Database Restored!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.sidebar.error("Invalid CSV format. Columns must match exactly.")
+        except Exception as e:
+            st.sidebar.error("Error reading file.")
 
 # ==========================================
 # PAGE 1: LIVE SESSION
@@ -123,7 +143,7 @@ if 'page' not in locals() or page == "Live Session" or (st.session_state.session
         if st.session_state.session_paused:
             st.markdown("<h4 style='text-align: center; color: #ffae00; letter-spacing: 5px;'>⏸ PAUSED</h4>", unsafe_allow_html=True)
         
-        # --- SMART FLIP CLOCK UI (Handles Pauses) ---
+        # --- SMART FLIP CLOCK UI ---
         start_time_ms = int(st.session_state.start_time * 1000)
         accumulated_ms = int(st.session_state.accumulated_time * 1000)
         is_paused_js = "true" if st.session_state.session_paused else "false"
@@ -160,7 +180,7 @@ if 'page' not in locals() or page == "Live Session" or (st.session_state.session
             }}
 
             if (isPaused) {{
-                updateDisplay(accumulatedMs); // Show static paused time
+                updateDisplay(accumulatedMs);
             }} else {{
                 setInterval(function() {{
                     var now = new Date().getTime();
@@ -185,32 +205,31 @@ if 'page' not in locals() or page == "Live Session" or (st.session_state.session
                     st.rerun()
             else:
                 if st.button("⏸️ PAUSE SESSION"):
-                    # Calculate time spent before pausing and add it to accumulated total
                     st.session_state.accumulated_time += (time.time() - st.session_state.start_time)
                     st.session_state.session_paused = True
                     st.rerun()
                     
         with col_btn2:
             if st.button("⏹️ END & LOG DATA"):
-                # Calculate final total time
                 if not st.session_state.session_paused:
                     st.session_state.accumulated_time += (time.time() - st.session_state.start_time)
                 
                 duration_minutes = round(st.session_state.accumulated_time / 60, 2)
-                
                 hour = datetime.now().hour
                 time_of_day = "Morning" if hour < 12 else "Afternoon" if hour < 18 else "Evening/Night"
                 
-                new_data = {
-                    "Date": datetime.now().strftime("%Y-%m-%d"),
+                # Append to Local DataFrame
+                new_row = pd.DataFrame([{
+                    "Date": pd.to_datetime(datetime.now().strftime("%Y-%m-%d")),
                     "Subject": st.session_state.current_subject,
                     "Task": st.session_state.current_task,
                     "Duration": duration_minutes,
                     "Time": time_of_day
-                }
-                requests.post(SHEETDB_URL, json={"data": new_data})
+                }])
                 
-                # Reset System completely
+                st.session_state.db = pd.concat([st.session_state.db, new_row], ignore_index=True)
+                
+                # Reset System
                 st.session_state.session_active = False
                 st.session_state.session_paused = False
                 st.session_state.start_time = 0.0
@@ -219,8 +238,7 @@ if 'page' not in locals() or page == "Live Session" or (st.session_state.session
                 st.session_state.current_task = ""
                 st.session_state.zen_mode = False
                 
-                st.cache_data.clear()
-                st.success(f"Boom. {duration_minutes} minutes logged to your database.")
+                st.success(f"Boom. {duration_minutes} minutes logged locally! Remember to Export Backup later.")
                 st.balloons()
                 time.sleep(2)
                 st.rerun()
@@ -230,8 +248,13 @@ if 'page' not in locals() or page == "Live Session" or (st.session_state.session
 # ==========================================
 elif page == "Daily Timeline" and not (st.session_state.session_active and st.session_state.zen_mode):
     st.title("📅 Today's Log")
+    db = st.session_state.db
     today = pd.Timestamp.now().normalize()
-    todays_data = db[db["Date"] == today]
+    
+    if not db.empty:
+        todays_data = db[db["Date"] == today]
+    else:
+        todays_data = pd.DataFrame()
     
     if todays_data.empty:
         st.info("No sessions logged today yet. Go to 'Live Session' to start.")
@@ -247,9 +270,10 @@ elif page == "Daily Timeline" and not (st.session_state.session_active and st.se
 # ==========================================
 elif page == "Deep Analytics" and not (st.session_state.session_active and st.session_state.zen_mode):
     st.title("📊 The Command Center")
+    db = st.session_state.db
     
     if db.empty:
-        st.warning("Complete a session to generate analytics.")
+        st.warning("No data found. Upload a backup or complete a session to generate analytics.")
     else:
         st.markdown("### ⏱️ Select Timeframe")
         timeframe = st.selectbox("Analyze your performance for:", ["Today", "Yesterday", "This Week", "This Month", "This Year"])
