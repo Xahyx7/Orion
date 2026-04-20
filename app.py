@@ -1,30 +1,29 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 import time
 import streamlit.components.v1 as components
 from supabase import create_client, Client
 
-# ─────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="NEON STUDY OS",
-    page_icon="⚡",
+    page_title="Study OS",
+    page_icon="○",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ─────────────────────────────────────────
-# GLOBAL CSS — OLED + FUTURISTIC MINIMAL
-# ─────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# DESIGN SYSTEM
+# Pure black OLED · DM Sans + DM Mono · muted dot accents only
+# ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@300;400&display=swap');
 
-/* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body,
@@ -34,798 +33,606 @@ html, body,
 [data-testid="stDecoration"],
 section[data-testid="stSidebar"],
 .main .block-container {
-    background-color: #000000 !important;
-    color: #e0e0e0 !important;
-    font-family: 'Syne', sans-serif !important;
+    background-color: #000 !important;
+    color: #e8e8e8 !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
+.main .block-container { padding: 2.5rem 3.5rem !important; max-width: 1300px !important; }
 
-.main .block-container {
-    padding: 2rem 3rem !important;
-    max-width: 1400px !important;
-}
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: #161616; }
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
-
-/* ── SIDEBAR ── */
 section[data-testid="stSidebar"] {
-    border-right: 1px solid #111 !important;
-    padding-top: 2rem !important;
-}
-section[data-testid="stSidebar"] * { font-family: 'Syne', sans-serif !important; }
-section[data-testid="stSidebar"] .stRadio label {
-    color: #555 !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 3px !important;
-    text-transform: uppercase !important;
-    padding: 10px 0 !important;
-    transition: color 0.3s !important;
-}
-section[data-testid="stSidebar"] .stRadio label:hover { color: #00f2fe !important; }
-
-/* ── HEADINGS ── */
-h1, h2, h3 { font-family: 'Syne', sans-serif !important; font-weight: 800 !important; letter-spacing: -1px !important; }
-
-/* ── INPUTS ── */
-input, textarea {
-    background-color: #080808 !important;
-    color: #e0e0e0 !important;
-    border: 1px solid #1c1c1c !important;
-    border-radius: 8px !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.85rem !important;
-    transition: border-color 0.3s !important;
-}
-input:focus, textarea:focus { border-color: #00f2fe !important; outline: none !important; box-shadow: 0 0 0 2px rgba(0,242,254,0.08) !important; }
-
-/* ── SELECTBOX ── */
-[data-testid="stSelectbox"] > div > div {
-    background-color: #080808 !important;
-    border: 1px solid #1c1c1c !important;
-    border-radius: 8px !important;
-    color: #e0e0e0 !important;
-}
-
-/* ── BUTTONS ── */
-.stButton > button {
+    border-right: 1px solid #0d0d0d !important;
     background: #000 !important;
-    color: #00f2fe !important;
-    border: 1px solid #00f2fe !important;
-    border-radius: 8px !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.7rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 3px !important;
+}
+section[data-testid="stSidebar"] > div { padding: 2rem 1.5rem !important; }
+
+[data-testid="stSidebar"] .stRadio label {
+    color: #2a2a2a !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 400 !important;
+    padding: 9px 0 !important;
+    transition: color 0.2s !important;
+}
+[data-testid="stSidebar"] .stRadio label:hover { color: #888 !important; }
+
+input, textarea {
+    background: #080808 !important;
+    color: #e8e8e8 !important;
+    border: 1px solid #161616 !important;
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.875rem !important;
+    transition: border-color 0.2s !important;
+}
+input:focus, textarea:focus { border-color: #2e2e2e !important; outline: none !important; }
+input::placeholder { color: #252525 !important; }
+
+[data-testid="stSelectbox"] > div > div {
+    background: #080808 !important;
+    border: 1px solid #161616 !important;
+    border-radius: 10px !important;
+    color: #e8e8e8 !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+label[data-testid="stWidgetLabel"] p {
+    color: #282828 !important;
+    font-size: 0.6rem !important;
+    letter-spacing: 2.5px !important;
     text-transform: uppercase !important;
-    padding: 0.6rem 1.5rem !important;
+    font-family: 'DM Mono', monospace !important;
+}
+
+.stButton > button {
+    background: #0a0a0a !important;
+    color: #c0c0c0 !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.2px !important;
+    padding: 0.65rem 1.5rem !important;
     width: 100% !important;
-    transition: all 0.25s ease !important;
-    position: relative !important;
-    overflow: hidden !important;
+    transition: background 0.2s, border-color 0.2s, color 0.2s !important;
+    box-shadow: none !important;
 }
 .stButton > button:hover {
-    background: #00f2fe !important;
-    color: #000 !important;
-    box-shadow: 0 0 25px rgba(0,242,254,0.35) !important;
-    transform: translateY(-1px) !important;
+    background: #141414 !important;
+    border-color: #2a2a2a !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
-.stButton > button:active { transform: translateY(0px) !important; }
 
-/* ── METRIC CARDS ── */
 [data-testid="stMetric"] {
-    background: #060606 !important;
-    border: 1px solid #111 !important;
-    border-radius: 12px !important;
-    padding: 1.2rem 1.5rem !important;
-    position: relative !important;
-    overflow: hidden !important;
+    background: #050505 !important;
+    border: 1px solid #0d0d0d !important;
+    border-radius: 14px !important;
+    padding: 1.4rem 1.6rem !important;
 }
-[data-testid="stMetric"]::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0; left: 0; right: 0 !important;
-    height: 1px !important;
-    background: linear-gradient(90deg, transparent, #00f2fe, transparent) !important;
+[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    font-family: 'DM Mono', monospace !important;
+    font-weight: 300 !important;
+    font-size: 1.9rem !important;
+    letter-spacing: -1px !important;
 }
-[data-testid="stMetricValue"] { color: #00f2fe !important; font-family: 'Space Mono', monospace !important; font-size: 1.8rem !important; }
-[data-testid="stMetricLabel"] { color: #333 !important; font-size: 0.65rem !important; letter-spacing: 3px !important; text-transform: uppercase !important; }
-
-/* ── DATAFRAME ── */
-[data-testid="stDataFrame"] {
-    border: 1px solid #111 !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
+[data-testid="stMetricLabel"] p {
+    color: #252525 !important;
+    font-size: 0.58rem !important;
+    letter-spacing: 2.5px !important;
+    text-transform: uppercase !important;
+    font-family: 'DM Mono', monospace !important;
 }
 
-/* ── DIVIDER ── */
-hr { border-color: #111 !important; margin: 2rem 0 !important; }
+[data-testid="stToggle"] p { font-size: 0.78rem !important; color: #2e2e2e !important; }
 
-/* ── TOGGLE ── */
-[data-testid="stToggle"] span { font-size: 0.7rem !important; letter-spacing: 2px !important; text-transform: uppercase !important; color: #555 !important; }
+hr { border-color: #0d0d0d !important; margin: 2rem 0 !important; }
 
-/* ── HIDE STREAMLIT CHROME ── */
-#MainMenu { visibility: hidden; }
-footer { visibility: hidden; }
-[data-testid="stDeployButton"] { display: none; }
-
-/* ── PLOTLY CHART BACKGROUND ── */
-.js-plotly-plot, .plotly, .plot-container { background: transparent !important; }
-
-/* ── SIDEBAR USER BADGE ── */
-.user-badge {
-    background: #060606;
-    border: 1px solid #111;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.user-dot {
-    width: 8px; height: 8px;
-    background: #00f2fe;
-    border-radius: 50%;
-    box-shadow: 0 0 8px #00f2fe;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-/* ── SUBJECT PILL ── */
-.subject-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-}
+#MainMenu { display: none !important; }
+footer { display: none !important; }
+[data-testid="stDeployButton"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────
-# SUPABASE INIT
-# ─────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# SUBJECTS
+# ─────────────────────────────────────────────────────────────
+SUBJECTS = {
+    "Physical Chemistry":   {"dot": "#5b8cff", "label": "Phys Chem"},
+    "Organic Chemistry":    {"dot": "#c084fc", "label": "Org Chem"},
+    "Inorganic Chemistry":  {"dot": "#34d399", "label": "Inorg Chem"},
+    "Physics":              {"dot": "#fb923c", "label": "Physics"},
+    "Mathematics":          {"dot": "#f472b6", "label": "Maths"},
+    "Mock Test / Revision": {"dot": "#64748b", "label": "Mock / Rev"},
+}
+def sdot(s):   return SUBJECTS.get(s, {}).get("dot", "#555")
+def slabel(s): return SUBJECTS.get(s, {}).get("label", s)
+
+# ─────────────────────────────────────────────────────────────
+# SUPABASE
+# ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def init_connection():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 supabase = init_connection()
 
-# ─────────────────────────────────────────
-# SUBJECT CONFIG (colors + icons)
-# ─────────────────────────────────────────
-SUBJECTS = {
-    "Physical Chemistry":   {"color": "#00f2fe", "icon": "⚗️"},
-    "Organic Chemistry":    {"color": "#a78bfa", "icon": "🧪"},
-    "Inorganic Chemistry":  {"color": "#34d399", "icon": "🔬"},
-    "Physics":              {"color": "#f59e0b", "icon": "⚡"},
-    "Mathematics":          {"color": "#f472b6", "icon": "∑"},
-    "Mock Test / Revision": {"color": "#94a3b8", "icon": "📋"},
-}
-
-def get_color(subject):
-    return SUBJECTS.get(subject, {}).get("color", "#00f2fe")
-
-def get_icon(subject):
-    return SUBJECTS.get(subject, {}).get("icon", "📚")
-
-# ─────────────────────────────────────────
-# LOGIN
-# ─────────────────────────────────────────
-if 'username' not in st.session_state:
-    st.markdown("""
-    <div style="min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <div style="text-align: center; margin-bottom: 48px;">
-            <div style="font-size: 0.65rem; letter-spacing: 8px; color: #333; text-transform: uppercase; font-family: 'Space Mono', monospace; margin-bottom: 16px;">
-                SYSTEM BOOT
-            </div>
-            <h1 style="font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; color: #fff; margin: 0; line-height: 1;">
-                NEON<span style="color: #00f2fe;">.</span>OS
-            </h1>
-            <div style="font-size: 0.65rem; letter-spacing: 6px; color: #222; text-transform: uppercase; font-family: 'Space Mono', monospace; margin-top: 12px;">
-                JEE STUDY TERMINAL
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        user_input = st.text_input("", placeholder="ENTER CODENAME")
-        if st.button("⟶  AUTHENTICATE"):
-            if user_input.strip():
-                st.session_state.username = user_input.strip()
-                st.rerun()
-    st.stop()
-
-# ─────────────────────────────────────────
-# LOAD DATA (per user, safe)
-# ─────────────────────────────────────────
 @st.cache_data(ttl=5)
 def load_data(user):
     try:
-        response = supabase.table("study_logs").select("*").eq("username", user).execute()
-        if response.data:
-            df = pd.DataFrame(response.data)
+        r = supabase.table("study_logs").select("*").eq("username", user).execute()
+        if r.data:
+            df = pd.DataFrame(r.data)
             df['Date'] = pd.to_datetime(df['Date'])
             df['Duration'] = pd.to_numeric(df['Duration'], errors='coerce').fillna(0)
             return df
     except Exception:
         pass
-    return pd.DataFrame(columns=["Date", "Subject", "Task", "Duration", "Time", "username"])
+    return pd.DataFrame(columns=["Date","Subject","Task","Duration","Time","username"])
 
-db = load_data(st.session_state.username)
-
-# ─────────────────────────────────────────
-# SESSION STATE INIT
-# ─────────────────────────────────────────
-for k, v in {
-    'session_active': False, 'session_paused': False,
-    'start_time': 0.0, 'accumulated_time': 0.0,
-    'current_subject': '', 'current_task': '',
-    'zen_mode': False
-}.items():
+# ─────────────────────────────────────────────────────────────
+# SESSION STATE
+# ─────────────────────────────────────────────────────────────
+for k, v in dict(
+    session_active=False, session_paused=False,
+    start_time=0.0, accumulated_time=0.0,
+    current_subject="", current_task="", zen_mode=False
+).items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ─────────────────────────────────────────
-# ZEN MODE OVERRIDE
-# ─────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# LOGIN
+# ─────────────────────────────────────────────────────────────
+if 'username' not in st.session_state:
+    st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
+    _, col, _ = st.columns([1, 1.2, 1])
+    with col:
+        st.markdown("""
+        <p style='font-size:0.55rem; letter-spacing:5px; color:#1a1a1a;
+                  text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:20px;'>STUDY OS</p>
+        <h1 style='font-size:3rem; font-weight:300; letter-spacing:-2px;
+                   color:#fff; line-height:1.1; margin-bottom:44px;'>Good to<br>see you.</h1>
+        """, unsafe_allow_html=True)
+        name = st.text_input("", placeholder="Enter your name")
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+        if st.button("Continue →"):
+            if name.strip():
+                st.session_state.username = name.strip()
+                st.rerun()
+    st.stop()
+
+db = load_data(st.session_state.username)
+
+# ─────────────────────────────────────────────────────────────
+# ZEN MODE
+# ─────────────────────────────────────────────────────────────
 if st.session_state.session_active and st.session_state.zen_mode:
     st.markdown("""
     <style>
-    section[data-testid="stSidebar"],
-    [data-testid="collapsedControl"],
-    header { display: none !important; }
-    .main .block-container { padding: 1rem !important; }
-    </style>
-    """, unsafe_allow_html=True)
+    section[data-testid="stSidebar"],[data-testid="collapsedControl"],header{display:none!important;}
+    .main .block-container{padding:2rem!important;}
+    </style>""", unsafe_allow_html=True)
     page = "Live Session"
 else:
-    # SIDEBAR
     with st.sidebar:
+        is_live = st.session_state.session_active
+        dot_col = "#fb923c" if is_live else "#1c1c1c"
         st.markdown(f"""
-        <div class="user-badge">
-            <div class="user-dot"></div>
-            <div>
-                <div style="font-size: 0.6rem; letter-spacing: 3px; color: #333; text-transform: uppercase; font-family: 'Space Mono', monospace;">LOGGED IN</div>
-                <div style="font-size: 0.9rem; font-weight: 700; color: #fff;">{st.session_state.username}</div>
+        <div style='margin-bottom:32px;'>
+            <p style='font-size:0.5rem; letter-spacing:3px; color:#1a1a1a;
+                      text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:8px;'>LOGGED IN</p>
+            <div style='display:flex; align-items:center; gap:9px;'>
+                <div style='width:6px; height:6px; border-radius:50%; background:{dot_col};
+                            {"box-shadow:0 0 6px " + dot_col if is_live else ""}'></div>
+                <span style='font-size:0.95rem; font-weight:500; color:#d0d0d0;'>{st.session_state.username}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-        if st.button("LOGOUT"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+        if st.button("Sign out"):
+            for k in list(st.session_state.keys()): del st.session_state[k]
             st.rerun()
-
-        st.markdown("<div style='height: 24px'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; padding-left: 4px; margin-bottom: 8px;'>NAVIGATE</div>", unsafe_allow_html=True)
-        page = st.radio("", ["Live Session", "Daily Timeline", "Deep Analytics"], label_visibility="collapsed")
-
-        # Sidebar stats teaser
+        st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+        page = st.radio("", ["Live Session","Daily Timeline","Deep Analytics"],
+                        label_visibility="collapsed")
         if not db.empty:
-            st.markdown("<div style='height: 32px'></div>", unsafe_allow_html=True)
-            total_hrs = round(db['Duration'].sum() / 60, 1)
-            total_sessions = len(db)
+            total_all = round(db['Duration'].sum()/60, 1)
             st.markdown(f"""
-            <div style="padding: 16px; background: #060606; border: 1px solid #0e0e0e; border-radius: 10px;">
-                <div style="font-size: 0.55rem; letter-spacing: 3px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;">ALL TIME</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #00f2fe; font-family: Space Mono, monospace; line-height: 1;">{total_hrs}h</div>
-                <div style="font-size: 0.6rem; color: #333; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;">{total_sessions} SESSIONS</div>
+            <div style='margin-top:48px; padding-top:20px; border-top:1px solid #0d0d0d;'>
+                <p style='font-size:0.5rem; letter-spacing:3px; color:#1a1a1a;
+                          text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:12px;'>ALL TIME</p>
+                <p style='font-size:2rem; font-weight:300; color:#fff;
+                          font-family:DM Mono,monospace; letter-spacing:-1px; margin-bottom:4px;'>
+                    {total_all}<span style='font-size:0.9rem; color:#282828;'>h</span></p>
+                <p style='font-size:0.65rem; color:#1e1e1e;'>{len(db)} sessions</p>
             </div>
             """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════
 # PAGE 1 — LIVE SESSION
-# ═══════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 if page == "Live Session":
 
     if not st.session_state.session_active:
         st.markdown("""
-        <h1 style='font-size: 2.8rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 4px;'>
-            START SESSION
-        </h1>
-        <p style='color: #333; font-size: 0.7rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 40px;'>
-            LOCK IN · TRACK · CRUSH IT
-        </p>
+        <h1 style='font-size:2.5rem; font-weight:300; letter-spacing:-1.5px; color:#fff; margin-bottom:6px;'>New Session</h1>
+        <p style='color:#222; font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+                  font-family:DM Mono,monospace; margin-bottom:44px;'>SET YOUR FOCUS</p>
         """, unsafe_allow_html=True)
 
-        col_a, col_b = st.columns([1.2, 1])
+        col_a, _, col_b = st.columns([1.1, 0.08, 0.9])
         with col_a:
-            subject = st.selectbox("SUBJECT", list(SUBJECTS.keys()))
-            task_notes = st.text_input("SESSION GOAL", placeholder="e.g., HC Verma Ch.8 — Optics")
+            subject = st.selectbox("Subject", list(SUBJECTS.keys()))
+            task    = st.text_input("Goal", placeholder="e.g. HC Verma Ch.8 — Optics")
+            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+            zen     = st.toggle("Focus mode  ·  hide navigation")
+
         with col_b:
-            st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
-            # Subject preview card
-            subj_color = get_color(subject)
-            subj_icon = get_icon(subject)
+            dc = sdot(subject)
             st.markdown(f"""
-            <div style="background: #060606; border: 1px solid #111; border-left: 3px solid {subj_color}; border-radius: 10px; padding: 20px 24px; margin-top: 8px;">
-                <div style="font-size: 2rem; margin-bottom: 8px;">{subj_icon}</div>
-                <div style="font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace; color: {subj_color};">{subject}</div>
+            <div style='margin-top:26px; background:#040404; border:1px solid #0d0d0d;
+                        border-radius:14px; padding:24px 26px;'>
+                <div style='width:8px; height:8px; border-radius:50%; background:{dc};
+                            box-shadow:0 0 12px {dc}33; margin-bottom:14px;'></div>
+                <p style='font-size:1rem; font-weight:400; color:#c0c0c0; margin-bottom:3px;'>{slabel(subject)}</p>
+                <p style='font-size:0.65rem; color:#1e1e1e;'>ready to track</p>
             </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
-        zen_toggle = st.toggle("🌌  ZEN MODE — hide all distractions")
-
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("▶  LAUNCH SESSION"):
-                st.session_state.zen_mode = zen_toggle
-                st.session_state.session_active = True
-                st.session_state.start_time = time.time()
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        _, bc, _ = st.columns([1, 0.75, 1])
+        with bc:
+            if st.button("Start →"):
+                st.session_state.zen_mode         = zen
+                st.session_state.session_active   = True
+                st.session_state.start_time       = time.time()
                 st.session_state.accumulated_time = 0.0
-                st.session_state.current_subject = subject
-                st.session_state.current_task = task_notes
+                st.session_state.current_subject  = subject
+                st.session_state.current_task     = task
                 st.rerun()
 
     else:
-        subj_color = get_color(st.session_state.current_subject)
-        subj_icon = get_icon(st.session_state.current_subject)
-
-        if st.session_state.session_paused:
-            st.markdown(f"""
-            <div style="text-align:center; padding: 8px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15); border-radius: 8px; margin-bottom: 16px;">
-                <span style="font-size: 0.6rem; letter-spacing: 5px; color: #f59e0b; text-transform: uppercase; font-family: Space Mono, monospace;">⏸  PAUSED</span>
-            </div>
-            """, unsafe_allow_html=True)
+        dc     = sdot(st.session_state.current_subject)
+        lbl    = slabel(st.session_state.current_subject)
+        paused = st.session_state.session_paused
 
         st.markdown(f"""
-        <div style="text-align:center; margin-bottom: 8px;">
-            <span style="font-size: 0.6rem; letter-spacing: 5px; color: #333; text-transform: uppercase; font-family: Space Mono, monospace;">{subj_icon}  {st.session_state.current_subject}</span>
+        <div style='margin-bottom:28px;'>
+            <div style='display:flex; align-items:center; gap:9px; margin-bottom:5px;'>
+                <div style='width:6px; height:6px; border-radius:50%; background:{dc};
+                            {"" if paused else "box-shadow:0 0 8px " + dc + "55;"}'></div>
+                <p style='font-size:0.72rem; color:#2e2e2e; letter-spacing:0.5px;'>{lbl}</p>
+            </div>
+            {"<p style='font-size:0.58rem; letter-spacing:3px; color:#fb923c; text-transform:uppercase; font-family:DM Mono,monospace;'>Paused</p>" if paused else ""}
         </div>
         """, unsafe_allow_html=True)
 
-        start_time_ms = int(st.session_state.start_time * 1000)
-        accumulated_ms = int(st.session_state.accumulated_time * 1000)
-        is_paused_js = "true" if st.session_state.session_paused else "false"
-        glow_color = subj_color
+        sms = int(st.session_state.start_time * 1000)
+        ams = int(st.session_state.accumulated_time * 1000)
+        pjs = "true" if paused else "false"
+        op  = "0.2" if paused else "1"
 
-        flip_clock_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
+        components.html(f"""<!DOCTYPE html><html><head>
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap');
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 220px;
-            overflow: hidden;
-        }}
-        .clock-wrap {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            opacity: {"0.35" if st.session_state.session_paused else "1"};
-            transition: opacity 0.4s ease;
-        }}
-        .unit {{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }}
-        .digit-card {{
-            background: #050505;
-            border: 1px solid #0e0e0e;
-            border-radius: 10px;
-            width: 130px;
-            height: 130px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }}
-        .digit-card::after {{
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #000;
-            z-index: 2;
-        }}
-        .digit-card::before {{
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse at 50% 0%, rgba({','.join(str(int(glow_color.lstrip('#')[i:i+2], 16)) for i in (0,2,4))}, 0.06) 0%, transparent 70%);
-        }}
-        .digit {{
-            font-family: 'Space Mono', monospace;
-            font-size: 78px;
-            font-weight: 700;
-            color: {glow_color};
-            text-shadow: 0 0 20px {glow_color}66, 0 0 50px {glow_color}22;
-            letter-spacing: -3px;
-            line-height: 1;
-            position: relative;
-            z-index: 1;
-            transition: all 0.1s;
-        }}
-        .label {{
-            font-family: 'Space Mono', monospace;
-            font-size: 9px;
-            letter-spacing: 4px;
-            color: #1e1e1e;
-            text-transform: uppercase;
-        }}
-        .sep {{
-            font-family: 'Space Mono', monospace;
-            font-size: 60px;
-            color: #111;
-            margin-bottom: 22px;
-            font-weight: 700;
-        }}
-        </style>
-        </head>
-        <body>
-        <div class="clock-wrap">
-            <div class="unit">
-                <div class="digit-card"><div class="digit" id="h">00</div></div>
-                <div class="label">HOURS</div>
-            </div>
-            <div class="sep">:</div>
-            <div class="unit">
-                <div class="digit-card"><div class="digit" id="m">00</div></div>
-                <div class="label">MINS</div>
-            </div>
-            <div class="sep">:</div>
-            <div class="unit">
-                <div class="digit-card"><div class="digit" id="s">00</div></div>
-                <div class="label">SECS</div>
-            </div>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300&display=swap');
+        *{{margin:0;padding:0;box-sizing:border-box;}}
+        body{{background:#000;display:flex;justify-content:center;align-items:center;height:180px;overflow:hidden;}}
+        .w{{display:flex;align-items:flex-end;gap:2px;opacity:{op};transition:opacity 0.5s;}}
+        .seg{{display:flex;flex-direction:column;align-items:center;gap:7px;}}
+        .n{{font-family:'DM Mono',monospace;font-size:90px;font-weight:300;color:#fff;
+             letter-spacing:-6px;line-height:1;transition:opacity 0.08s;}}
+        .l{{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:#1c1c1c;text-transform:uppercase;}}
+        .c{{font-family:'DM Mono',monospace;font-size:64px;font-weight:300;color:#141414;margin-bottom:20px;line-height:1;}}
+        </style></head><body>
+        <div class="w">
+            <div class="seg"><span class="n" id="h">00</span><span class="l">hr</span></div>
+            <span class="c">:</span>
+            <div class="seg"><span class="n" id="m">00</span><span class="l">min</span></div>
+            <span class="c">:</span>
+            <div class="seg"><span class="n" id="s">00</span><span class="l">sec</span></div>
         </div>
         <script>
-        var startTime = {start_time_ms};
-        var acc = {accumulated_ms};
-        var isPaused = {is_paused_js};
-        var prevS = -1;
-
-        function pad(n) {{ return n.toString().padStart(2,'0'); }}
-
-        function update(d) {{
-            var h = Math.floor(d/3600000);
-            var m = Math.floor((d%3600000)/60000);
-            var s = Math.floor((d%60000)/1000);
-            document.getElementById("h").innerText = pad(h);
-            document.getElementById("m").innerText = pad(m);
-            var sEl = document.getElementById("s");
-            if(s !== prevS) {{
-                sEl.style.transform = 'scale(1.08)';
-                setTimeout(function(){{ sEl.style.transform = 'scale(1)'; }}, 120);
-                prevS = s;
-            }}
-            sEl.innerText = pad(s);
+        var t0={sms},acc={ams},paused={pjs},prev=-1;
+        function pad(n){{return n.toString().padStart(2,'0');}}
+        function tick(){{
+            var d=paused?acc:acc+(Date.now()-t0);
+            var h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000),s=Math.floor((d%60000)/1000);
+            document.getElementById('h').textContent=pad(h);
+            document.getElementById('m').textContent=pad(m);
+            var el=document.getElementById('s');
+            if(s!==prev){{el.style.opacity='0.3';setTimeout(function(){{el.style.opacity='1';}},70);prev=s;}}
+            el.textContent=pad(s);
         }}
+        tick();
+        if(!paused) setInterval(tick,250);
+        </script></body></html>""", height=195)
 
-        if(isPaused) {{
-            update(acc);
-        }} else {{
-            setInterval(function() {{
-                update(acc + (new Date().getTime() - startTime));
-            }}, 250);
-        }}
-        </script>
-        </body>
-        </html>
-        """
-        components.html(flip_clock_html, height=220)
-
-        st.markdown("<div style='height: 16px'></div>", unsafe_allow_html=True)
-
-        c1, c2, c3 = st.columns([1, 1, 1])
+        st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+        c1, _, c3 = st.columns([1, 0.12, 1])
         with c1:
-            if st.session_state.session_paused:
-                if st.button("▶  RESUME"):
-                    st.session_state.start_time = time.time()
+            if paused:
+                if st.button("Resume"):
+                    st.session_state.start_time     = time.time()
                     st.session_state.session_paused = False
                     st.rerun()
             else:
-                if st.button("⏸  PAUSE"):
-                    st.session_state.accumulated_time += (time.time() - st.session_state.start_time)
-                    st.session_state.session_paused = True
+                if st.button("Pause"):
+                    st.session_state.accumulated_time += time.time() - st.session_state.start_time
+                    st.session_state.session_paused    = True
                     st.rerun()
         with c3:
-            if st.button("⏹  SAVE & END"):
-                if not st.session_state.session_paused:
-                    st.session_state.accumulated_time += (time.time() - st.session_state.start_time)
-                duration_mins = round(st.session_state.accumulated_time / 60, 2)
-                h = datetime.now().hour
-                time_of_day = "Morning" if h < 12 else "Afternoon" if h < 18 else "Evening/Night"
-                new_row = {
-                    "Date": datetime.now().strftime("%Y-%m-%d"),
-                    "Subject": st.session_state.current_subject,
-                    "Task": st.session_state.current_task,
-                    "Duration": duration_mins,
-                    "Time": time_of_day,
+            if st.button("Save & End"):
+                if not paused:
+                    st.session_state.accumulated_time += time.time() - st.session_state.start_time
+                mins = round(st.session_state.accumulated_time / 60, 2)
+                h    = datetime.now().hour
+                tod  = "Morning" if h < 12 else "Afternoon" if h < 18 else "Evening/Night"
+                supabase.table("study_logs").insert({
+                    "Date":     datetime.now().strftime("%Y-%m-%d"),
+                    "Subject":  st.session_state.current_subject,
+                    "Task":     st.session_state.current_task,
+                    "Duration": mins,
+                    "Time":     tod,
                     "username": st.session_state.username
-                }
-                supabase.table("study_logs").insert(new_row).execute()
-                st.session_state.session_active = False
-                st.session_state.zen_mode = False
+                }).execute()
+                st.session_state.session_active   = False
+                st.session_state.zen_mode         = False
                 st.cache_data.clear()
                 st.balloons()
-                time.sleep(1.5)
+                time.sleep(1.2)
                 st.rerun()
 
 
-# ═══════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # PAGE 2 — DAILY TIMELINE
-# ═══════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 elif page == "Daily Timeline":
     st.markdown("""
-    <h1 style='font-size: 2.8rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 4px;'>TODAY</h1>
-    <p style='color: #333; font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 40px;'>
-        SESSION LOG
-    </p>
+    <h1 style='font-size:2.5rem; font-weight:300; letter-spacing:-1.5px; color:#fff; margin-bottom:6px;'>Today</h1>
+    <p style='color:#1e1e1e; font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+              font-family:DM Mono,monospace; margin-bottom:40px;'>SESSION LOG</p>
     """, unsafe_allow_html=True)
 
     today = pd.Timestamp.now().normalize()
-    todays_data = db[db["Date"] == today].copy() if not db.empty else pd.DataFrame()
+    tdf   = db[db["Date"] == today].copy() if not db.empty else pd.DataFrame()
 
-    if todays_data.empty:
+    if tdf.empty:
         st.markdown("""
-        <div style="text-align: center; padding: 80px 0; color: #1e1e1e;">
-            <div style="font-size: 3rem; margin-bottom: 16px;">◎</div>
-            <div style="font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace;">NO SESSIONS YET TODAY</div>
-        </div>
-        """, unsafe_allow_html=True)
+        <div style='text-align:center; padding:100px 0;'>
+            <p style='font-size:2.5rem; color:#111; margin-bottom:14px;'>○</p>
+            <p style='font-size:0.6rem; letter-spacing:3px; color:#181818;
+                      text-transform:uppercase; font-family:DM Mono,monospace;'>Nothing logged today</p>
+        </div>""", unsafe_allow_html=True)
     else:
-        total_mins = todays_data['Duration'].sum()
-        total_hrs = round(total_mins / 60, 2)
-        session_count = len(todays_data)
-
         c1, c2, c3 = st.columns(3)
-        c1.metric("HOURS TODAY", f"{total_hrs}h")
-        c2.metric("SESSIONS", session_count)
-        c3.metric("TOP SUBJECT", todays_data.groupby('Subject')['Duration'].sum().idxmax() if not todays_data.empty else "—")
+        c1.metric("Today",      f"{round(tdf['Duration'].sum()/60,1)}h")
+        c2.metric("Sessions",   len(tdf))
+        c3.metric("Top",        slabel(tdf.groupby('Subject')['Duration'].sum().idxmax()))
+        st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 32px'></div>", unsafe_allow_html=True)
-
-        # Timeline visual
-        st.markdown("<div style='font-size: 0.6rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 20px;'>SESSION BREAKDOWN</div>", unsafe_allow_html=True)
-
-        for _, row in todays_data.sort_values('Duration', ascending=False).iterrows():
-            subj_color = get_color(row['Subject'])
-            pct = min(100, (row['Duration'] / (todays_data['Duration'].max() + 0.01)) * 100)
-            dur_str = f"{int(row['Duration'])}m" if row['Duration'] < 60 else f"{row['Duration']/60:.1f}h"
-            task_str = row['Task'] if str(row['Task']) not in ['nan', 'None', ''] else "—"
+        for _, row in tdf.sort_values('Duration', ascending=False).iterrows():
+            dc      = sdot(row['Subject'])
+            dur     = row['Duration']
+            dur_str = f"{int(dur)}m" if dur < 60 else f"{dur/60:.1f}h"
+            bw      = int(min(100, dur / (tdf['Duration'].max()+0.01) * 100))
+            task_s  = str(row.get('Task',''))
+            task_s  = "" if task_s in ['nan','None',''] else task_s
             st.markdown(f"""
-            <div style="background: #040404; border: 1px solid #0e0e0e; border-radius: 10px; padding: 16px 20px; margin-bottom: 10px; position: relative; overflow: hidden;">
-                <div style="position: absolute; bottom: 0; left: 0; height: 2px; width: {pct}%; background: {subj_color}; opacity: 0.6;"></div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style='background:#040404; border:1px solid #0d0d0d; border-radius:12px;
+                        padding:18px 22px; margin-bottom:8px; position:relative; overflow:hidden;'>
+                <div style='position:absolute; bottom:0; left:0; height:1px;
+                            width:{bw}%; background:{dc}; opacity:0.35;'></div>
+                <div style='display:flex; justify-content:space-between; align-items:flex-start;'>
                     <div>
-                        <div style="font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; font-family: Space Mono, monospace; color: {subj_color};">{get_icon(row['Subject'])}  {row['Subject']}</div>
-                        <div style="font-size: 0.8rem; color: #555; margin-top: 5px;">{task_str}</div>
+                        <div style='display:flex; align-items:center; gap:8px; margin-bottom:5px;'>
+                            <div style='width:5px; height:5px; border-radius:50%; background:{dc};'></div>
+                            <span style='font-size:0.8rem; color:#c0c0c0;'>{slabel(row["Subject"])}</span>
+                        </div>
+                        {"<p style='font-size:0.72rem; color:#282828; padding-left:13px;'>" + task_s + "</p>" if task_s else ""}
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 1.2rem; font-weight: 800; color: #fff; font-family: Space Mono, monospace;">{dur_str}</div>
-                        <div style="font-size: 0.6rem; color: #222; text-transform: uppercase; letter-spacing: 2px;">{row['Time']}</div>
+                    <div style='text-align:right;'>
+                        <p style='font-size:1.25rem; font-weight:300; color:#fff;
+                                  font-family:DM Mono,monospace; letter-spacing:-1px;'>{dur_str}</p>
+                        <p style='font-size:0.58rem; color:#1e1e1e;'>{row["Time"]}</p>
                     </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # PAGE 3 — DEEP ANALYTICS
-# ═══════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 elif page == "Deep Analytics":
     st.markdown("""
-    <h1 style='font-size: 2.8rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 4px;'>ANALYTICS</h1>
-    <p style='color: #333; font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 32px;'>
-        DEEP INTELLIGENCE
-    </p>
+    <h1 style='font-size:2.5rem; font-weight:300; letter-spacing:-1.5px; color:#fff; margin-bottom:6px;'>Analytics</h1>
+    <p style='color:#1e1e1e; font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+              font-family:DM Mono,monospace; margin-bottom:32px;'>STUDY INTELLIGENCE</p>
     """, unsafe_allow_html=True)
 
     if db.empty:
         st.markdown("""
-        <div style="text-align: center; padding: 80px 0; color: #1e1e1e;">
-            <div style="font-size: 3rem; margin-bottom: 16px;">◎</div>
-            <div style="font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; font-family: Space Mono, monospace;">RECORD SESSIONS TO SEE ANALYTICS</div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        tf = st.selectbox("TIMEFRAME", ["Today", "Yesterday", "This Week", "This Month", "This Year", "All Time"])
-        now = pd.Timestamp.now().normalize()
+        <div style='text-align:center; padding:100px 0;'>
+            <p style='font-size:2.5rem; color:#111; margin-bottom:14px;'>◌</p>
+            <p style='font-size:0.6rem; letter-spacing:3px; color:#181818;
+                      text-transform:uppercase; font-family:DM Mono,monospace;'>Start a session to see data</p>
+        </div>""", unsafe_allow_html=True)
+        st.stop()
 
-        if tf == "Today":             fdb = db[db['Date'] == now]
-        elif tf == "Yesterday":       fdb = db[db['Date'] == now - pd.Timedelta(days=1)]
-        elif tf == "This Week":       fdb = db[(db['Date'].dt.isocalendar().week == now.isocalendar().week) & (db['Date'].dt.year == now.year)]
-        elif tf == "This Month":      fdb = db[(db['Date'].dt.month == now.month) & (db['Date'].dt.year == now.year)]
-        elif tf == "This Year":       fdb = db[db['Date'].dt.year == now.year]
-        else:                         fdb = db.copy()
+    tf  = st.selectbox("", ["Today","Yesterday","This Week","This Month","This Year","All Time"],
+                       label_visibility="collapsed")
+    now = pd.Timestamp.now().normalize()
 
-        if fdb.empty:
-            st.info(f"No data for {tf}.")
-        else:
-            # ── HERO METRICS ──
-            total_hrs = round(fdb['Duration'].sum() / 60, 1)
-            top_subj = fdb.groupby('Subject')['Duration'].sum().idxmax()
-            avg_session = round(fdb['Duration'].mean(), 1)
-            streak = 0
-            if tf in ["All Time", "This Year", "This Month", "This Week"]:
-                dates = db['Date'].dt.normalize().unique()
-                d = now
-                while d in dates:
-                    streak += 1
-                    d -= pd.Timedelta(days=1)
+    if   tf == "Today":      fdb = db[db['Date'] == now]
+    elif tf == "Yesterday":  fdb = db[db['Date'] == now - pd.Timedelta(days=1)]
+    elif tf == "This Week":
+        fdb = db[(db['Date'].dt.isocalendar().week == now.isocalendar().week)
+                 & (db['Date'].dt.year == now.year)]
+    elif tf == "This Month": fdb = db[(db['Date'].dt.month==now.month)&(db['Date'].dt.year==now.year)]
+    elif tf == "This Year":  fdb = db[db['Date'].dt.year == now.year]
+    else:                    fdb = db.copy()
 
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("TOTAL HOURS", f"{total_hrs}h")
-            c2.metric("TOP SUBJECT", top_subj.split()[0])
-            c3.metric("AVG SESSION", f"{avg_session}m")
-            c4.metric("DAY STREAK 🔥", f"{streak}")
+    if fdb.empty:
+        st.markdown(f"<p style='color:#222; font-size:0.82rem; padding:40px 0;'>No data for {tf}.</p>",
+                    unsafe_allow_html=True)
+        st.stop()
 
-            st.markdown("<div style='height: 40px'></div>", unsafe_allow_html=True)
+    # Streak
+    streak    = 0
+    all_dates = set(db['Date'].dt.normalize().unique())
+    d = now
+    while d in all_dates:
+        streak += 1
+        d -= pd.Timedelta(days=1)
 
-            CHART_LAYOUT = dict(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family='Space Mono, monospace', color='#333', size=10),
-                margin=dict(l=0, r=0, t=20, b=0),
-                showlegend=False,
-            )
-            AXIS_STYLE = dict(
-                showgrid=True,
-                gridcolor='#0a0a0a',
-                gridwidth=1,
-                zeroline=False,
-                showline=False,
-                tickfont=dict(color='#333', size=9),
-                tickcolor='#111',
-            )
+    total_hrs = round(fdb['Duration'].sum()/60, 1)
+    top_s     = fdb.groupby('Subject')['Duration'].sum().idxmax()
+    avg_m     = round(fdb['Duration'].mean(), 0)
 
-            # ── ROW 1: Donut + Bar ──
-            col1, col2 = st.columns(2)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Hours",       f"{total_hrs}h")
+    c2.metric("Top subject", slabel(top_s))
+    c3.metric("Avg session", f"{int(avg_m)}m")
+    c4.metric("Streak",      f"{streak}d")
 
-            with col1:
-                st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;'>SUBJECT MIX</div>", unsafe_allow_html=True)
-                subj_sum = fdb.groupby('Subject')['Duration'].sum().reset_index()
-                colors = [get_color(s) for s in subj_sum['Subject']]
-                fig_donut = go.Figure(go.Pie(
-                    labels=subj_sum['Subject'],
-                    values=subj_sum['Duration'],
-                    hole=0.72,
-                    marker=dict(colors=colors, line=dict(color='#000', width=3)),
-                    textinfo='none',
-                    hovertemplate='<b>%{label}</b><br>%{value:.0f} min<extra></extra>',
-                ))
-                fig_donut.add_annotation(
-                    text=f"<b>{total_hrs}h</b>",
-                    x=0.5, y=0.5, showarrow=False,
-                    font=dict(size=28, color='#00f2fe', family='Space Mono, monospace')
-                )
-                fig_donut.update_layout(**CHART_LAYOUT, height=260)
-                st.plotly_chart(fig_donut, use_container_width=True, config={'displayModeBar': False})
+    st.markdown("<div style='height:44px'></div>", unsafe_allow_html=True)
 
-                # Subject legend
-                for _, r in subj_sum.sort_values('Duration', ascending=False).iterrows():
-                    pct = round(r['Duration'] / subj_sum['Duration'].sum() * 100, 1)
-                    c = get_color(r['Subject'])
-                    st.markdown(f"""
-                    <div style="display:flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #080808;">
-                        <div style="display:flex; align-items:center; gap: 8px;">
-                            <div style="width:6px; height:6px; border-radius:50%; background:{c}; box-shadow: 0 0 6px {c}66;"></div>
-                            <span style="font-size:0.7rem; color: #555;">{r['Subject']}</span>
-                        </div>
-                        <span style="font-size:0.65rem; font-family: Space Mono, monospace; color: {c};">{pct}%</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+    # ── Chart base layout (no **kwargs conflict) ──
+    def base_layout(height=260):
+        return dict(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family='DM Mono, monospace', color='#1e1e1e', size=9),
+            margin=dict(l=0, r=0, t=8, b=0),
+            showlegend=False,
+            height=height,
+            xaxis=dict(
+                showgrid=True, gridcolor='#080808', gridwidth=1,
+                zeroline=False, showline=False,
+                tickfont=dict(color='#252525', size=9),
+            ),
+            yaxis=dict(
+                showgrid=False, zeroline=False, showline=False,
+                tickfont=dict(color='#252525', size=9),
+            ),
+        )
 
-            with col2:
-                st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;'>HOURS BY SUBJECT</div>", unsafe_allow_html=True)
-                subj_hrs = subj_sum.copy()
-                subj_hrs['Hours'] = subj_hrs['Duration'] / 60
-                subj_hrs['ShortLabel'] = subj_hrs['Subject'].apply(lambda x: x.split()[0])
-                subj_hrs = subj_hrs.sort_values('Hours', ascending=True)
-                colors_bar = [get_color(s) for s in subj_hrs['Subject']]
+    # ── ROW 1: Donut + Bar ──
+    col1, col2 = st.columns(2)
 
-                fig_bar = go.Figure(go.Bar(
-                    x=subj_hrs['Hours'],
-                    y=subj_hrs['ShortLabel'],
-                    orientation='h',
-                    marker=dict(
-                        color=colors_bar,
-                        opacity=0.85,
-                        line=dict(width=0),
-                    ),
-                    hovertemplate='<b>%{y}</b><br>%{x:.1f}h<extra></extra>',
-                ))
-                fig_bar.update_layout(
-                    **CHART_LAYOUT,
-                    height=300,
-                    xaxis=dict(**AXIS_STYLE, title=''),
-                    yaxis=dict(**AXIS_STYLE, title='', showgrid=False),
-                )
-                st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+    with col1:
+        st.markdown("<p style='font-size:0.5rem; letter-spacing:3px; color:#181818; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>MIX</p>", unsafe_allow_html=True)
+        ss     = fdb.groupby('Subject')['Duration'].sum().reset_index()
+        colors = [sdot(s) for s in ss['Subject']]
 
-            st.markdown("<div style='height: 32px'></div>", unsafe_allow_html=True)
+        fig_d  = go.Figure(go.Pie(
+            labels=[slabel(s) for s in ss['Subject']],
+            values=ss['Duration'],
+            hole=0.74,
+            marker=dict(colors=colors, line=dict(color='#000', width=4)),
+            textinfo='none',
+            hovertemplate='<b>%{label}</b><br>%{value:.0f} min<extra></extra>',
+            sort=True,
+        ))
+        fig_d.add_annotation(
+            text=f"{total_hrs}h", x=0.5, y=0.5, showarrow=False,
+            font=dict(size=28, color='#ffffff', family='DM Mono, monospace')
+        )
+        layout_d = base_layout(240)
+        # Pie doesn't use xaxis/yaxis — remove them
+        layout_d.pop('xaxis', None)
+        layout_d.pop('yaxis', None)
+        fig_d.update_layout(**layout_d)
+        st.plotly_chart(fig_d, use_container_width=True, config={'displayModeBar': False})
 
-            # ── ROW 2: Daily trend heatmap-style area chart ──
-            if tf not in ["Today", "Yesterday"]:
-                st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;'>DAILY STUDY HOURS</div>", unsafe_allow_html=True)
+        for _, r in ss.sort_values('Duration', ascending=False).iterrows():
+            pct = round(r['Duration']/ss['Duration'].sum()*100, 1)
+            dc  = sdot(r['Subject'])
+            st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; align-items:center;
+                        padding:6px 0; border-bottom:1px solid #080808;'>
+                <div style='display:flex; align-items:center; gap:9px;'>
+                    <div style='width:5px; height:5px; border-radius:50%; background:{dc};'></div>
+                    <span style='font-size:0.72rem; color:#333;'>{slabel(r["Subject"])}</span>
+                </div>
+                <span style='font-size:0.65rem; font-family:DM Mono,monospace; color:#252525;'>{pct}%</span>
+            </div>""", unsafe_allow_html=True)
 
-                daily = fdb.groupby('Date')['Duration'].sum().reset_index()
-                daily['Hours'] = daily['Duration'] / 60
+    with col2:
+        st.markdown("<p style='font-size:0.5rem; letter-spacing:3px; color:#181818; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>HOURS BY SUBJECT</p>", unsafe_allow_html=True)
+        sh       = ss.copy()
+        sh['h']  = sh['Duration']/60
+        sh['lb'] = sh['Subject'].apply(slabel)
+        sh       = sh.sort_values('h', ascending=True)
 
-                fig_area = go.Figure()
-                fig_area.add_trace(go.Scatter(
-                    x=daily['Date'],
-                    y=daily['Hours'],
-                    mode='lines',
-                    line=dict(color='#00f2fe', width=2),
-                    fill='tozeroy',
-                    fillcolor='rgba(0,242,254,0.04)',
-                    hovertemplate='%{x|%b %d}<br><b>%{y:.1f}h</b><extra></extra>',
-                ))
-                fig_area.update_layout(
-                    **CHART_LAYOUT,
-                    height=200,
-                    xaxis=dict(**AXIS_STYLE, title=''),
-                    yaxis=dict(**AXIS_STYLE, title=''),
-                )
-                st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
+        fig_b = go.Figure(go.Bar(
+            x=sh['h'], y=sh['lb'], orientation='h',
+            marker=dict(color=[sdot(s) for s in sh['Subject']], opacity=0.65, line=dict(width=0)),
+            hovertemplate='<b>%{y}</b><br>%{x:.1f}h<extra></extra>',
+        ))
+        fig_b.update_layout(**base_layout(300))
+        st.plotly_chart(fig_b, use_container_width=True, config={'displayModeBar': False})
 
-            # ── ROW 3: Time of Day + Weekly Heatmap ──
-            col3, col4 = st.columns(2)
+    st.markdown("<div style='height:36px'></div>", unsafe_allow_html=True)
 
-            with col3:
-                st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;'>TIME OF DAY</div>", unsafe_allow_html=True)
-                tod = fdb.groupby('Time')['Duration'].sum().reset_index()
-                tod_order = ["Morning", "Afternoon", "Evening/Night"]
-                tod['Time'] = pd.Categorical(tod['Time'], categories=tod_order, ordered=True)
-                tod = tod.sort_values('Time')
-                tod_colors = ['#f59e0b', '#a78bfa', '#00f2fe']
+    # ── Area trend ──
+    if tf not in ["Today","Yesterday"]:
+        st.markdown("<p style='font-size:0.5rem; letter-spacing:3px; color:#181818; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>DAILY HOURS</p>", unsafe_allow_html=True)
+        daily    = fdb.groupby('Date')['Duration'].sum().reset_index()
+        daily['h'] = daily['Duration']/60
 
-                fig_tod = go.Figure(go.Bar(
-                    x=tod['Time'],
-                    y=tod['Duration'] / 60,
-                    marker=dict(color=tod_colors[:len(tod)], opacity=0.85, line=dict(width=0)),
-                    hovertemplate='%{x}<br><b>%{y:.1f}h</b><extra></extra>',
-                ))
-                fig_tod.update_layout(
-                    **CHART_LAYOUT,
-                    height=220,
-                    xaxis=dict(**AXIS_STYLE, title=''),
-                    yaxis=dict(**AXIS_STYLE, title=''),
-                )
-                st.plotly_chart(fig_tod, use_container_width=True, config={'displayModeBar': False})
+        fig_a = go.Figure(go.Scatter(
+            x=daily['Date'], y=daily['h'],
+            mode='lines',
+            line=dict(color='#ffffff', width=1.2),
+            fill='tozeroy', fillcolor='rgba(255,255,255,0.025)',
+            hovertemplate='%{x|%b %d}  <b>%{y:.1f}h</b><extra></extra>',
+        ))
+        fig_a.update_layout(**base_layout(170))
+        st.plotly_chart(fig_a, use_container_width=True, config={'displayModeBar': False})
+        st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
 
-            with col4:
-                st.markdown("<div style='font-size: 0.55rem; letter-spacing: 4px; color: #222; text-transform: uppercase; font-family: Space Mono, monospace; margin-bottom: 12px;'>SESSION LOG</div>", unsafe_allow_html=True)
-                recent = fdb.sort_values('Date', ascending=False).head(8)
-                for _, row in recent.iterrows():
-                    subj_color = get_color(row['Subject'])
-                    dur_str = f"{int(row['Duration'])}m" if row['Duration'] < 60 else f"{row['Duration']/60:.1f}h"
-                    st.markdown(f"""
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 7px 0; border-bottom: 1px solid #080808;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="width:5px; height:5px; border-radius:50%; background:{subj_color};"></div>
-                            <span style="font-size:0.7rem; color:#444;">{row['Subject'].split()[0]}</span>
-                        </div>
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <span style="font-size:0.6rem; color:#222; font-family: Space Mono, monospace;">{row['Date'].strftime('%b %d')}</span>
-                            <span style="font-size:0.75rem; font-weight:700; color:{subj_color}; font-family: Space Mono, monospace;">{dur_str}</span>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+    # ── Time of day + Recent log ──
+    col3, col4 = st.columns(2)
+
+    with col3:
+        st.markdown("<p style='font-size:0.5rem; letter-spacing:3px; color:#181818; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>TIME OF DAY</p>", unsafe_allow_html=True)
+        tod   = fdb.groupby('Time')['Duration'].sum().reset_index()
+        order = ["Morning","Afternoon","Evening/Night"]
+        tod['Time'] = pd.Categorical(tod['Time'], categories=order, ordered=True)
+        tod   = tod.sort_values('Time')
+        tcols = ['#fb923c','#c084fc','#5b8cff'][:len(tod)]
+
+        fig_t = go.Figure(go.Bar(
+            x=tod['Time'], y=tod['Duration']/60,
+            marker=dict(color=tcols, opacity=0.6, line=dict(width=0)),
+            hovertemplate='%{x}<br><b>%{y:.1f}h</b><extra></extra>',
+        ))
+        fig_t.update_layout(**base_layout(220))
+        st.plotly_chart(fig_t, use_container_width=True, config={'displayModeBar': False})
+
+    with col4:
+        st.markdown("<p style='font-size:0.5rem; letter-spacing:3px; color:#181818; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>RECENT</p>", unsafe_allow_html=True)
+        recent = fdb.sort_values('Date', ascending=False).head(10)
+        for _, row in recent.iterrows():
+            dc      = sdot(row['Subject'])
+            dur     = row['Duration']
+            dur_str = f"{int(dur)}m" if dur < 60 else f"{dur/60:.1f}h"
+            st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; align-items:center;
+                        padding:7px 0; border-bottom:1px solid #080808;'>
+                <div style='display:flex; align-items:center; gap:9px;'>
+                    <div style='width:5px; height:5px; border-radius:50%; background:{dc};'></div>
+                    <span style='font-size:0.72rem; color:#303030;'>{slabel(row["Subject"])}</span>
+                </div>
+                <div style='display:flex; align-items:center; gap:14px;'>
+                    <span style='font-size:0.58rem; color:#181818; font-family:DM Mono,monospace;'>{row["Date"].strftime("%b %d")}</span>
+                    <span style='font-size:0.8rem; font-weight:300; color:#aaa; font-family:DM Mono,monospace; letter-spacing:-0.5px;'>{dur_str}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
