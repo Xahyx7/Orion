@@ -17,13 +17,13 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────────
-# DESIGN SYSTEM: Glassmorphism + Fluid Animations + OLED Glow
+# DESIGN SYSTEM: Glassmorphism + GPU Hardware Acceleration
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&display=swap');
 
-/* Base Reset & Animations */
+/* Base Reset & GPU Accelerated Animations */
 *, *::before, *::after { box-sizing: border-box; }
 
 @keyframes fadeSlideUp {
@@ -37,9 +37,10 @@ st.markdown("""
     100% { box-shadow: 0 0 10px rgba(255,255,255,0.1); }
 }
 
-/* App Background & Typography */
+/* Background - Fixed to prevent re-paint lag */
 html, body, [data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at 50% -20%, #1a1a1f 0%, #000000 70%) !important;
+    background: #000 !important;
+    background-image: radial-gradient(circle at 50% -20%, #1a1a1f 0%, #000000 70%) !important;
     background-attachment: fixed !important;
     color: #e8e8e8 !important;
     font-family: 'DM Sans', sans-serif !important;
@@ -50,23 +51,25 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 3rem 4rem !important; 
     max-width: 1200px !important; 
     animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity; /* Hardware acceleration */
 }
 
-/* Scrollbar (Minimalist) */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-/* Sidebar (Glass Panel) */
+/* Sidebar */
 section[data-testid="stSidebar"] {
     border-right: 1px solid rgba(255,255,255,0.03) !important;
     background: rgba(5, 5, 5, 0.4) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    transform: translateZ(0); /* Hardware acceleration */
 }
 section[data-testid="stSidebar"] > div { padding: 3rem 1.5rem !important; }
 
-/* Radio Nav (Smooth Hover) */
+/* Radio Nav */
 [data-testid="stSidebar"] .stRadio label {
     color: #555 !important;
     font-size: 0.9rem !important;
@@ -81,11 +84,9 @@ section[data-testid="stSidebar"] > div { padding: 3rem 1.5rem !important; }
     background: rgba(255,255,255,0.05);
     transform: translateX(4px);
 }
-[data-testid="stSidebar"] div[role="radiogroup"] > label[data-baseweb="radio"] {
-    background: transparent !important;
-}
+[data-testid="stSidebar"] div[role="radiogroup"] > label[data-baseweb="radio"] { background: transparent !important; }
 
-/* Inputs & Textareas (Pixel Style Pill/Rounded) */
+/* Inputs & Textareas */
 input, textarea {
     background: rgba(25, 25, 25, 0.5) !important;
     color: #fff !important;
@@ -94,14 +95,11 @@ input, textarea {
     font-size: 0.95rem !important;
     padding: 0.75rem 1rem !important;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
 }
 input:focus, textarea:focus { 
     border-color: rgba(255,255,255,0.3) !important; 
     background: rgba(35, 35, 35, 0.8) !important;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.05), inset 0 2px 4px rgba(0,0,0,0.2) !important;
 }
-input::placeholder { color: #555 !important; }
 
 /* Selectbox */
 [data-testid="stSelectbox"] > div > div {
@@ -109,7 +107,6 @@ input::placeholder { color: #555 !important; }
     border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 16px !important;
     color: #e8e8e8 !important;
-    transition: all 0.3s ease !important;
 }
 
 /* Labels */
@@ -122,7 +119,7 @@ label[data-testid="stWidgetLabel"] p {
     margin-bottom: 8px !important;
 }
 
-/* Buttons (iPhone Pill Style) */
+/* Buttons */
 .stButton > button {
     background: linear-gradient(180deg, #222, #111) !important;
     color: #fff !important;
@@ -130,23 +127,17 @@ label[data-testid="stWidgetLabel"] p {
     border-radius: 50px !important;
     font-weight: 500 !important;
     font-size: 0.9rem !important;
-    letter-spacing: 0.5px !important;
     padding: 0.75rem 2rem !important;
     width: 100% !important;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: all 0.2s ease !important;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1) !important;
 }
 .stButton > button:hover {
-    transform: translateY(-2px) scale(1.01) !important;
+    transform: translateY(-2px) !important;
     background: linear-gradient(180deg, #333, #1a1a1a) !important;
-    border-color: rgba(255,255,255,0.2) !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5), 0 0 15px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.2) !important;
-}
-.stButton > button:active {
-    transform: translateY(1px) scale(0.98) !important;
 }
 
-/* Metrics (Apple Widget Style) */
+/* Metrics */
 [data-testid="stMetric"] {
     background: rgba(15, 15, 15, 0.4) !important;
     backdrop-filter: blur(12px) !important;
@@ -154,12 +145,7 @@ label[data-testid="stWidgetLabel"] p {
     border: 1px solid rgba(255,255,255,0.04) !important;
     border-radius: 24px !important;
     padding: 1.5rem !important;
-    transition: transform 0.3s ease, background 0.3s ease !important;
-}
-[data-testid="stMetric"]:hover {
-    transform: translateY(-4px);
-    background: rgba(25, 25, 25, 0.6) !important;
-    border-color: rgba(255,255,255,0.1) !important;
+    transform: translateZ(0); /* Hardware acceleration */
 }
 [data-testid="stMetricValue"] {
     color: #ffffff !important;
@@ -173,10 +159,9 @@ label[data-testid="stWidgetLabel"] p {
     font-size: 0.65rem !important;
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
-    font-family: 'DM Mono', monospace !important;
 }
 
-/* Custom UI Classes for Inline HTML */
+/* Custom UI Classes */
 .glass-card {
     background: rgba(12, 12, 12, 0.5);
     backdrop-filter: blur(16px);
@@ -184,13 +169,8 @@ label[data-testid="stWidgetLabel"] p {
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 24px;
     padding: 24px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-.glass-card:hover {
-    transform: translateY(-5px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.02);
+    transform: translateZ(0); /* Hardware acceleration */
 }
 .list-item {
     background: rgba(10, 10, 10, 0.4);
@@ -201,25 +181,17 @@ label[data-testid="stWidgetLabel"] p {
     margin-bottom: 12px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
-}
-.list-item:hover {
-    background: rgba(20, 20, 20, 0.6);
-    transform: scale(1.01);
-    border: 1px solid rgba(255,255,255,0.08);
+    transform: translateZ(0);
 }
 
 [data-testid="stToggle"] p { font-size: 0.85rem !important; color: #aaa !important; font-weight: 500;}
-
 hr { border-color: rgba(255,255,255,0.05) !important; margin: 2rem 0 !important; }
-
-/* Hide default streamlit elements */
 #MainMenu, footer, [data-testid="stDeployButton"], [data-testid="stDecoration"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# SUBJECTS (Bright neon accents)
+# SUBJECTS
 # ─────────────────────────────────────────────────────────────
 SUBJECTS = {
     "Physical Chemistry":   {"dot": "#3b82f6", "label": "Phys Chem"},
@@ -233,7 +205,7 @@ def sdot(s):   return SUBJECTS.get(s, {}).get("dot", "#555")
 def slabel(s): return SUBJECTS.get(s, {}).get("label", s)
 
 # ─────────────────────────────────────────────────────────────
-# SUPABASE
+# SUPABASE (Cached for 5 minutes to prevent lag)
 # ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def init_connection():
@@ -241,7 +213,7 @@ def init_connection():
 
 supabase = init_connection()
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=300) 
 def load_data(user):
     try:
         r = supabase.table("study_logs").select("*").eq("username", user).execute()
@@ -250,8 +222,7 @@ def load_data(user):
             df['Date'] = pd.to_datetime(df['Date'])
             df['Duration'] = pd.to_numeric(df['Duration'], errors='coerce').fillna(0)
             return df
-    except Exception:
-        pass
+    except Exception: pass
     return pd.DataFrame(columns=["Date","Subject","Task","Duration","Time","username"])
 
 # ─────────────────────────────────────────────────────────────
@@ -266,21 +237,16 @@ for k, v in dict(
         st.session_state[k] = v
 
 # ─────────────────────────────────────────────────────────────
-# LOGIN (Dramatic Nothing Phone Intro)
+# LOGIN
 # ─────────────────────────────────────────────────────────────
 if 'username' not in st.session_state:
     st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
         st.markdown("""
-        <div style='text-align: left; animation: fadeSlideUp 1s ease forwards;'>
-            <p style='font-size:0.65rem; letter-spacing:4px; color:#555;
-                      text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:16px;'>
-                      System Initialized</p>
-            <h1 style='font-size:4rem; font-weight:300; letter-spacing:-2.5px;
-                       color:#fff; line-height:1; margin-bottom:40px; 
-                       text-shadow: 0 0 40px rgba(255,255,255,0.1);'>
-                       Study OS.</h1>
+        <div style='text-align: left;'>
+            <p style='font-size:0.65rem; letter-spacing:4px; color:#555; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:16px;'>System Initialized</p>
+            <h1 style='font-size:4rem; font-weight:300; letter-spacing:-2.5px; color:#fff; line-height:1; margin-bottom:40px;'>Study OS.</h1>
         </div>
         """, unsafe_allow_html=True)
         name = st.text_input("", placeholder="Enter your operator ID (Name)")
@@ -294,63 +260,14 @@ if 'username' not in st.session_state:
 db = load_data(st.session_state.username)
 
 # ─────────────────────────────────────────────────────────────
-# ZEN MODE / SIDEBAR
+# UI FRAGMENT: LIVE SESSION (Stops full-page reload lag)
 # ─────────────────────────────────────────────────────────────
-if st.session_state.session_active and st.session_state.zen_mode:
-    st.markdown("""
-    <style>
-    section[data-testid="stSidebar"],[data-testid="collapsedControl"],header{display:none!important;}
-    .main .block-container{padding:4rem!important; max-width: 900px !important;}
-    </style>""", unsafe_allow_html=True)
-    page = "Live Session"
-else:
-    with st.sidebar:
-        is_live = st.session_state.session_active
-        dot_col = "#10b981" if is_live else "#333"
-        st.markdown(f"""
-        <div style='margin-bottom:40px; padding: 12px; border-radius: 16px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03);'>
-            <p style='font-size:0.55rem; letter-spacing:2px; color:#666;
-                      text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>ACTIVE USER</p>
-            <div style='display:flex; align-items:center; gap:12px;'>
-                <div style='width:8px; height:8px; border-radius:50%; background:{dot_col};
-                            {"box-shadow: 0 0 12px " + dot_col if is_live else ""}; transition: all 0.3s ease;'></div>
-                <span style='font-size:1.1rem; font-weight:500; color:#eee;'>{st.session_state.username}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        page = st.radio("", ["Live Session","Daily Timeline","Deep Analytics"], label_visibility="collapsed")
-        
-        st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-        if st.button("Sign Out"):
-            for k in list(st.session_state.keys()): del st.session_state[k]
-            st.rerun()
-            
-        if not db.empty:
-            total_all = round(db['Duration'].sum()/60, 1)
-            st.markdown(f"""
-            <div style='margin-top:auto; padding-top:40px;'>
-                <div class="glass-card" style="padding: 20px;">
-                    <p style='font-size:0.55rem; letter-spacing:2px; color:#888;
-                              text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:8px;'>LIFETIME HOURS</p>
-                    <p style='font-size:2.2rem; font-weight:400; color:#fff;
-                              font-family:DM Mono,monospace; letter-spacing:-1px; margin-bottom:0;'>
-                        {total_all}<span style='font-size:1rem; color:#666;'>h</span></p>
-                    <p style='font-size:0.7rem; color:#555; margin-top: 4px;'>Across {len(db)} sessions</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-# ══════════════════════════════════════════════════════════════
-# PAGE 1 — LIVE SESSION
-# ══════════════════════════════════════════════════════════════
-if page == "Live Session":
-
+@st.fragment
+def live_session_fragment():
     if not st.session_state.session_active:
         st.markdown("""
         <h1 style='font-size:3rem; font-weight:400; letter-spacing:-1.5px; color:#fff; margin-bottom:4px;'>Terminal.</h1>
-        <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase;
-                  font-family:DM Mono,monospace; margin-bottom:48px;'>Initialize New Focus State</p>
+        <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:48px;'>Initialize New Focus State</p>
         """, unsafe_allow_html=True)
 
         col_a, _, col_b = st.columns([1.2, 0.1, 0.9])
@@ -364,9 +281,7 @@ if page == "Live Session":
             dc = sdot(subject)
             st.markdown(f"""
             <div class="glass-card" style='margin-top: 28px; text-align: center; padding: 40px 20px;'>
-                <div style='width:12px; height:12px; border-radius:50%; background:{dc};
-                            box-shadow:0 0 20px {dc}; margin: 0 auto 20px auto;
-                            animation: pulseGlow 2s infinite;'></div>
+                <div style='width:12px; height:12px; border-radius:50%; background:{dc}; box-shadow:0 0 20px {dc}; margin: 0 auto 20px auto; animation: pulseGlow 2s infinite;'></div>
                 <p style='font-size:1.2rem; font-weight:500; color:#fff; margin-bottom:4px;'>{slabel(subject)}</p>
                 <p style='font-size:0.8rem; color:#888; font-family: DM Mono;'>Awaiting execution...</p>
             </div>
@@ -376,25 +291,24 @@ if page == "Live Session":
         _, bc, _ = st.columns([1, 0.8, 1])
         with bc:
             if st.button("Execute Session →"):
-                st.session_state.zen_mode         = zen
-                st.session_state.session_active   = True
-                st.session_state.start_time       = time.time()
+                st.session_state.zen_mode = zen
+                st.session_state.session_active = True
+                st.session_state.start_time = time.time()
                 st.session_state.accumulated_time = 0.0
-                st.session_state.current_subject  = subject
-                st.session_state.current_task     = task
+                st.session_state.current_subject = subject
+                st.session_state.current_task = task
                 st.rerun()
 
     else:
-        dc     = sdot(st.session_state.current_subject)
-        lbl    = slabel(st.session_state.current_subject)
+        dc = sdot(st.session_state.current_subject)
+        lbl = slabel(st.session_state.current_subject)
         paused = st.session_state.session_paused
 
         st.markdown(f"""
         <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;'>
             <div>
                 <div style='display:flex; align-items:center; gap:12px; margin-bottom:8px;'>
-                    <div style='width:10px; height:10px; border-radius:50%; background:{dc};
-                                {"" if paused else "box-shadow:0 0 15px " + dc + "; animation: pulseGlow 2s infinite;"}'></div>
+                    <div style='width:10px; height:10px; border-radius:50%; background:{dc}; {"" if paused else "box-shadow:0 0 15px " + dc + "; animation: pulseGlow 2s infinite;"}'></div>
                     <p style='font-size:1.1rem; font-weight:500; color:#eee; letter-spacing:0.5px;'>{lbl}</p>
                 </div>
                 {"<p style='font-size:0.7rem; letter-spacing:4px; color:#f97316; text-transform:uppercase; font-family:DM Mono,monospace;'>System Paused</p>" if paused else "<p style='font-size:0.7rem; letter-spacing:4px; color:#10b981; text-transform:uppercase; font-family:DM Mono,monospace;'>System Active</p>"}
@@ -414,13 +328,11 @@ if page == "Live Session":
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap');
         *{{margin:0;padding:0;box-sizing:border-box;}}
         body{{background:transparent;display:flex;justify-content:center;align-items:center;height:220px;overflow:hidden;}}
-        .w{{display:flex;align-items:center;gap:15px;opacity:{op};transition:opacity 0.6s cubic-bezier(0.16,1,0.3,1);}}
+        .w{{display:flex;align-items:center;gap:15px;opacity:{op};transition:opacity 0.6s ease;}}
         .seg{{display:flex;flex-direction:column;align-items:center;gap:10px; background: rgba(20,20,20,0.5); padding: 20px 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.03); backdrop-filter: blur(10px); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);}}
-        .n{{font-family:'DM Mono',monospace;font-size:100px;font-weight:300;color:#fff;
-             letter-spacing:-4px;line-height:0.9; text-shadow: 0 0 30px rgba(255,255,255,0.1); transition: opacity 0.1s;}}
+        .n{{font-family:'DM Mono',monospace;font-size:100px;font-weight:300;color:#fff; letter-spacing:-4px;line-height:0.9; text-shadow: 0 0 30px rgba(255,255,255,0.1); transition: opacity 0.1s;}}
         .l{{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:4px;color:#666;text-transform:uppercase;}}
-        .c{{font-family:'DM Mono',monospace;font-size:70px;font-weight:300;color:#333;margin-bottom:30px; animation: blink 1s infinite;}}
-        @keyframes blink {{ 0%, 100% {{opacity: 1;}} 50% {{opacity: 0.3;}} }}
+        .c{{font-family:'DM Mono',monospace;font-size:70px;font-weight:300;color:#333;margin-bottom:30px;}}
         </style></head><body>
         <div class="w">
             <div class="seg"><span class="n" id="h">00</span><span class="l">Hours</span></div>
@@ -450,45 +362,89 @@ if page == "Live Session":
         with c1:
             if paused:
                 if st.button("Resume Protocol"):
-                    st.session_state.start_time     = time.time()
+                    st.session_state.start_time = time.time()
                     st.session_state.session_paused = False
                     st.rerun()
             else:
                 if st.button("Pause Protocol"):
                     st.session_state.accumulated_time += time.time() - st.session_state.start_time
-                    st.session_state.session_paused    = True
+                    st.session_state.session_paused = True
                     st.rerun()
         with c3:
             if st.button("Terminate & Save"):
-                if not paused:
-                    st.session_state.accumulated_time += time.time() - st.session_state.start_time
+                if not paused: st.session_state.accumulated_time += time.time() - st.session_state.start_time
                 mins = round(st.session_state.accumulated_time / 60, 2)
-                h    = datetime.now().hour
-                tod  = "Morning" if h < 12 else "Afternoon" if h < 18 else "Evening/Night"
+                h = datetime.now().hour
+                tod = "Morning" if h < 12 else "Afternoon" if h < 18 else "Evening/Night"
                 supabase.table("study_logs").insert({
-                    "Date":     datetime.now().strftime("%Y-%m-%d"),
-                    "Subject":  st.session_state.current_subject,
-                    "Task":     st.session_state.current_task,
+                    "Date": datetime.now().strftime("%Y-%m-%d"),
+                    "Subject": st.session_state.current_subject,
+                    "Task": st.session_state.current_task,
                     "Duration": mins,
-                    "Time":     tod,
+                    "Time": tod,
                     "username": st.session_state.username
                 }).execute()
-                st.session_state.session_active   = False
-                st.session_state.zen_mode         = False
+                st.session_state.session_active = False
+                st.session_state.zen_mode = False
                 st.cache_data.clear()
                 st.balloons()
                 time.sleep(1.2)
                 st.rerun()
 
+# ─────────────────────────────────────────────────────────────
+# SIDEBAR / NAVIGATION
+# ─────────────────────────────────────────────────────────────
+if st.session_state.session_active and st.session_state.zen_mode:
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"],[data-testid="collapsedControl"],header{display:none!important;}
+    .main .block-container{padding:4rem!important; max-width: 900px !important;}
+    </style>""", unsafe_allow_html=True)
+    page = "Live Session"
+else:
+    with st.sidebar:
+        is_live = st.session_state.session_active
+        dot_col = "#10b981" if is_live else "#333"
+        st.markdown(f"""
+        <div style='margin-bottom:40px; padding: 12px; border-radius: 16px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03);'>
+            <p style='font-size:0.55rem; letter-spacing:2px; color:#666; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:10px;'>ACTIVE USER</p>
+            <div style='display:flex; align-items:center; gap:12px;'>
+                <div style='width:8px; height:8px; border-radius:50%; background:{dot_col}; {"box-shadow: 0 0 12px " + dot_col if is_live else ""}; transition: all 0.3s ease;'></div>
+                <span style='font-size:1.1rem; font-weight:500; color:#eee;'>{st.session_state.username}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        page = st.radio("", ["Live Session","Daily Timeline","Deep Analytics"], label_visibility="collapsed")
+        
+        st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+        if st.button("Sign Out"):
+            for k in list(st.session_state.keys()): del st.session_state[k]
+            st.rerun()
+            
+        if not db.empty:
+            total_all = round(db['Duration'].sum()/60, 1)
+            st.markdown(f"""
+            <div style='margin-top:auto; padding-top:40px;'>
+                <div class="glass-card" style="padding: 20px;">
+                    <p style='font-size:0.55rem; letter-spacing:2px; color:#888; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:8px;'>LIFETIME HOURS</p>
+                    <p style='font-size:2.2rem; font-weight:400; color:#fff; font-family:DM Mono,monospace; letter-spacing:-1px; margin-bottom:0;'>
+                        {total_all}<span style='font-size:1rem; color:#666;'>h</span></p>
+                    <p style='font-size:0.7rem; color:#555; margin-top: 4px;'>Across {len(db)} sessions</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════
-# PAGE 2 — DAILY TIMELINE
-# ══════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────
+# PAGE ROUTING
+# ─────────────────────────────────────────────────────────────
+if page == "Live Session":
+    live_session_fragment()
+
 elif page == "Daily Timeline":
     st.markdown("""
     <h1 style='font-size:3rem; font-weight:400; letter-spacing:-1.5px; color:#fff; margin-bottom:4px;'>Timeline.</h1>
-    <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase;
-              font-family:DM Mono,monospace; margin-bottom:40px;'>Today's Action Log</p>
+    <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:40px;'>Today's Action Log</p>
     """, unsafe_allow_html=True)
 
     today = pd.Timestamp.now().normalize()
@@ -496,10 +452,9 @@ elif page == "Daily Timeline":
 
     if tdf.empty:
         st.markdown("""
-        <div style='text-align:center; padding:120px 0; animation: fadeSlideUp 0.8s ease;'>
+        <div style='text-align:center; padding:120px 0;'>
             <p style='font-size:3rem; color:#222; margin-bottom:20px;'>∅</p>
-            <p style='font-size:0.7rem; letter-spacing:4px; color:#555;
-                      text-transform:uppercase; font-family:DM Mono,monospace;'>Data absent for current cycle</p>
+            <p style='font-size:0.7rem; letter-spacing:4px; color:#555; text-transform:uppercase; font-family:DM Mono,monospace;'>Data absent for current cycle</p>
         </div>""", unsafe_allow_html=True)
     else:
         c1, c2, c3 = st.columns(3)
@@ -516,12 +471,9 @@ elif page == "Daily Timeline":
             task_s  = str(row.get('Task',''))
             task_s  = "" if task_s in ['nan','None',''] else task_s
             
-            # Progress bar integrated elegantly into the background
             st.markdown(f"""
             <div class="list-item">
-                <div style='position:absolute; bottom:0; left:0; height:2px;
-                            width:{bw}%; background: linear-gradient(90deg, transparent, {dc}); 
-                            box-shadow: 0 0 10px {dc};'></div>
+                <div style='position:absolute; bottom:0; left:0; height:2px; width:{bw}%; background: linear-gradient(90deg, transparent, {dc}); box-shadow: 0 0 10px {dc};'></div>
                 <div style='display:flex; justify-content:space-between; align-items:center;'>
                     <div>
                         <div style='display:flex; align-items:center; gap:12px; margin-bottom:6px;'>
@@ -531,53 +483,41 @@ elif page == "Daily Timeline":
                         {"<p style='font-size:0.8rem; color:#888; font-weight: 300; padding-left:20px; margin:0;'>" + task_s + "</p>" if task_s else ""}
                     </div>
                     <div style='text-align:right;'>
-                        <p style='font-size:1.8rem; font-weight:300; color:#fff;
-                                  font-family:DM Mono,monospace; letter-spacing:-1.5px; margin-bottom:2px;'>{dur_str}</p>
+                        <p style='font-size:1.8rem; font-weight:300; color:#fff; font-family:DM Mono,monospace; letter-spacing:-1.5px; margin-bottom:2px;'>{dur_str}</p>
                         <p style='font-size:0.65rem; color:#666; font-family: DM Mono; text-transform: uppercase; letter-spacing: 1px;'>{row["Time"]}</p>
                     </div>
                 </div>
             </div>""", unsafe_allow_html=True)
 
-
-# ══════════════════════════════════════════════════════════════
-# PAGE 3 — DEEP ANALYTICS
-# ══════════════════════════════════════════════════════════════
 elif page == "Deep Analytics":
     st.markdown("""
     <h1 style='font-size:3rem; font-weight:400; letter-spacing:-1.5px; color:#fff; margin-bottom:4px;'>Telemetry.</h1>
-    <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase;
-              font-family:DM Mono,monospace; margin-bottom:40px;'>Macro Systems Analysis</p>
+    <p style='color:#777; font-size:0.7rem; letter-spacing:4px; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:40px;'>Macro Systems Analysis</p>
     """, unsafe_allow_html=True)
 
     if db.empty:
         st.markdown("""
         <div style='text-align:center; padding:120px 0;'>
             <p style='font-size:3rem; color:#222; margin-bottom:20px;'>⍉</p>
-            <p style='font-size:0.7rem; letter-spacing:4px; color:#555;
-                      text-transform:uppercase; font-family:DM Mono,monospace;'>Insufficient data for telemetry</p>
+            <p style='font-size:0.7rem; letter-spacing:4px; color:#555; text-transform:uppercase; font-family:DM Mono,monospace;'>Insufficient data for telemetry</p>
         </div>""", unsafe_allow_html=True)
         st.stop()
 
-    tf  = st.selectbox("", ["Today","Yesterday","This Week","This Month","This Year","All Time"],
-                       label_visibility="collapsed")
+    tf  = st.selectbox("", ["Today","Yesterday","This Week","This Month","This Year","All Time"], label_visibility="collapsed")
     now = pd.Timestamp.now().normalize()
 
     if   tf == "Today":      fdb = db[db['Date'] == now]
     elif tf == "Yesterday":  fdb = db[db['Date'] == now - pd.Timedelta(days=1)]
-    elif tf == "This Week":
-        fdb = db[(db['Date'].dt.isocalendar().week == now.isocalendar().week)
-                 & (db['Date'].dt.year == now.year)]
+    elif tf == "This Week":  fdb = db[(db['Date'].dt.isocalendar().week == now.isocalendar().week) & (db['Date'].dt.year == now.year)]
     elif tf == "This Month": fdb = db[(db['Date'].dt.month==now.month)&(db['Date'].dt.year==now.year)]
     elif tf == "This Year":  fdb = db[db['Date'].dt.year == now.year]
     else:                    fdb = db.copy()
 
     if fdb.empty:
-        st.markdown(f"<p style='color:#666; font-size:0.9rem; padding:40px 0; text-align:center;'>No telemetry packets found for {tf}.</p>",
-                    unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#666; font-size:0.9rem; padding:40px 0; text-align:center;'>No telemetry packets found for {tf}.</p>", unsafe_allow_html=True)
         st.stop()
 
-    # Streak Logic
-    streak    = 0
+    streak = 0
     all_dates = set(db['Date'].dt.normalize().unique())
     d = now
     while d in all_dates:
@@ -596,7 +536,6 @@ elif page == "Deep Analytics":
 
     st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 
-    # ── Chart Base (Cleaned for Pixel/Nothing OS look) ──
     def base_layout(height=280):
         return dict(
             paper_bgcolor='rgba(0,0,0,0)',
@@ -606,23 +545,11 @@ elif page == "Deep Analytics":
             showlegend=False,
             height=height,
             dragmode=False,
-            xaxis=dict(
-                showgrid=True, gridcolor='rgba(255,255,255,0.03)', gridwidth=1,
-                zeroline=False, showline=False,
-                tickfont=dict(color='#666', size=10),
-            ),
-            yaxis=dict(
-                showgrid=False, zeroline=False, showline=False,
-                tickfont=dict(color='#666', size=10),
-            ),
-            hoverlabel=dict(
-                bgcolor="rgba(20,20,20,0.9)",
-                font_size=12,
-                font_family="DM Mono"
-            )
+            xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.03)', gridwidth=1, zeroline=False, showline=False, tickfont=dict(color='#666', size=10)),
+            yaxis=dict(showgrid=False, zeroline=False, showline=False, tickfont=dict(color='#666', size=10)),
+            hoverlabel=dict(bgcolor="rgba(20,20,20,0.9)", font_size=12, font_family="DM Mono")
         )
 
-    # ── ROW 1: Donut + Bar ──
     col1, col2 = st.columns([1, 1.1])
 
     with col1:
@@ -631,22 +558,10 @@ elif page == "Deep Analytics":
         ss     = fdb.groupby('Subject')['Duration'].sum().reset_index()
         colors = [sdot(s) for s in ss['Subject']]
 
-        fig_d  = go.Figure(go.Pie(
-            labels=[slabel(s) for s in ss['Subject']],
-            values=ss['Duration'],
-            hole=0.75,
-            marker=dict(colors=colors, line=dict(color='#0c0c0c', width=6)),
-            textinfo='none',
-            hovertemplate='<b>%{label}</b><br>%{value:.0f} min<extra></extra>',
-            sort=True,
-        ))
-        fig_d.add_annotation(
-            text=f"{total_hrs}h", x=0.5, y=0.5, showarrow=False,
-            font=dict(size=32, color='#ffffff', family='DM Mono, monospace')
-        )
+        fig_d  = go.Figure(go.Pie(labels=[slabel(s) for s in ss['Subject']], values=ss['Duration'], hole=0.75, marker=dict(colors=colors, line=dict(color='#0c0c0c', width=6)), textinfo='none', hovertemplate='<b>%{label}</b><br>%{value:.0f} min<extra></extra>', sort=True))
+        fig_d.add_annotation(text=f"{total_hrs}h", x=0.5, y=0.5, showarrow=False, font=dict(size=32, color='#ffffff', family='DM Mono, monospace'))
         layout_d = base_layout(240)
-        layout_d.pop('xaxis', None)
-        layout_d.pop('yaxis', None)
+        layout_d.pop('xaxis', None); layout_d.pop('yaxis', None)
         fig_d.update_layout(**layout_d)
         st.plotly_chart(fig_d, use_container_width=True, config={'displayModeBar': False})
         
@@ -654,15 +569,7 @@ elif page == "Deep Analytics":
         for _, r in ss.sort_values('Duration', ascending=False).iterrows():
             pct = round(r['Duration']/ss['Duration'].sum()*100, 1)
             dc  = sdot(r['Subject'])
-            st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; align-items:center;
-                        padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.03);'>
-                <div style='display:flex; align-items:center; gap:12px;'>
-                    <div style='width:6px; height:6px; border-radius:50%; background:{dc}; box-shadow: 0 0 8px {dc};'></div>
-                    <span style='font-size:0.85rem; color:#ccc; font-weight: 500;'>{slabel(r["Subject"])}</span>
-                </div>
-                <span style='font-size:0.8rem; font-family:DM Mono,monospace; color:#888;'>{pct}%</span>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.03);'><div style='display:flex; align-items:center; gap:12px;'><div style='width:6px; height:6px; border-radius:50%; background:{dc}; box-shadow: 0 0 8px {dc};'></div><span style='font-size:0.85rem; color:#ccc; font-weight: 500;'>{slabel(r['Subject'])}</span></div><span style='font-size:0.8rem; font-family:DM Mono,monospace; color:#888;'>{pct}%</span></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
@@ -673,38 +580,25 @@ elif page == "Deep Analytics":
         sh['lb'] = sh['Subject'].apply(slabel)
         sh       = sh.sort_values('h', ascending=True)
 
-        fig_b = go.Figure(go.Bar(
-            x=sh['h'], y=sh['lb'], orientation='h',
-            marker=dict(color=[sdot(s) for s in sh['Subject']], opacity=0.8, line=dict(width=0)),
-            hovertemplate='<b>%{y}</b><br>%{x:.1f}h<extra></extra>',
-            width=0.4
-        ))
+        fig_b = go.Figure(go.Bar(x=sh['h'], y=sh['lb'], orientation='h', marker=dict(color=[sdot(s) for s in sh['Subject']], opacity=0.8, line=dict(width=0)), hovertemplate='<b>%{y}</b><br>%{x:.1f}h<extra></extra>', width=0.4))
         fig_b.update_layout(**base_layout(380))
         st.plotly_chart(fig_b, use_container_width=True, config={'displayModeBar': False})
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
 
-    # ── Area trend ──
     if tf not in ["Today","Yesterday"]:
         st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.markdown("<p style='font-size:0.6rem; letter-spacing:3px; color:#777; text-transform:uppercase; font-family:DM Mono,monospace; margin-bottom:20px;'>Temporal Density</p>", unsafe_allow_html=True)
         daily    = fdb.groupby('Date')['Duration'].sum().reset_index()
         daily['h'] = daily['Duration']/60
 
-        fig_a = go.Figure(go.Scatter(
-            x=daily['Date'], y=daily['h'],
-            mode='lines',
-            line=dict(color='#fff', width=2, shape='spline', smoothing=1.3),
-            fill='tozeroy', fillcolor='rgba(255,255,255,0.05)',
-            hovertemplate='%{x|%b %d}  <b>%{y:.1f}h</b><extra></extra>',
-        ))
+        fig_a = go.Figure(go.Scatter(x=daily['Date'], y=daily['h'], mode='lines', line=dict(color='#fff', width=2, shape='spline', smoothing=1.3), fill='tozeroy', fillcolor='rgba(255,255,255,0.05)', hovertemplate='%{x|%b %d}  <b>%{y:.1f}h</b><extra></extra>'))
         fig_a.update_layout(**base_layout(220))
         st.plotly_chart(fig_a, use_container_width=True, config={'displayModeBar': False})
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
 
-    # ── Time of day + Recent log ──
     col3, col4 = st.columns(2)
 
     with col3:
@@ -716,12 +610,7 @@ elif page == "Deep Analytics":
         tod   = tod.sort_values('Time')
         tcols = ['#f97316','#a855f7','#3b82f6'][:len(tod)]
 
-        fig_t = go.Figure(go.Bar(
-            x=tod['Time'], y=tod['Duration']/60,
-            marker=dict(color=tcols, opacity=0.8, line=dict(width=0)),
-            hovertemplate='%{x}<br><b>%{y:.1f}h</b><extra></extra>',
-            width=0.3
-        ))
+        fig_t = go.Figure(go.Bar(x=tod['Time'], y=tod['Duration']/60, marker=dict(color=tcols, opacity=0.8, line=dict(width=0)), hovertemplate='%{x}<br><b>%{y:.1f}h</b><extra></extra>', width=0.3))
         fig_t.update_layout(**base_layout(260))
         st.plotly_chart(fig_t, use_container_width=True, config={'displayModeBar': False})
         st.markdown("</div>", unsafe_allow_html=True)
@@ -734,17 +623,5 @@ elif page == "Deep Analytics":
             dc      = sdot(row['Subject'])
             dur     = row['Duration']
             dur_str = f"{int(dur)}m" if dur < 60 else f"{dur/60:.1f}h"
-            st.markdown(f"""
-            <div style='display:flex; justify-content:space-between; align-items:center;
-                        padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03); transition: background 0.2s; border-radius: 8px;'
-                 onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                <div style='display:flex; align-items:center; gap:12px; padding-left: 8px;'>
-                    <div style='width:6px; height:6px; border-radius:50%; background:{dc}; box-shadow: 0 0 8px {dc};'></div>
-                    <span style='font-size:0.85rem; color:#ccc; font-weight:500;'>{slabel(row["Subject"])}</span>
-                </div>
-                <div style='display:flex; align-items:center; gap:20px; padding-right: 8px;'>
-                    <span style='font-size:0.65rem; color:#666; font-family:DM Mono,monospace; text-transform: uppercase;'>{row["Date"].strftime("%b %d")}</span>
-                    <span style='font-size:0.95rem; font-weight:400; color:#fff; font-family:DM Mono,monospace; letter-spacing:-0.5px;'>{dur_str}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);'><div style='display:flex; align-items:center; gap:12px; padding-left: 8px;'><div style='width:6px; height:6px; border-radius:50%; background:{dc}; box-shadow: 0 0 8px {dc};'></div><span style='font-size:0.85rem; color:#ccc; font-weight:500;'>{slabel(row['Subject'])}</span></div><div style='display:flex; align-items:center; gap:20px; padding-right: 8px;'><span style='font-size:0.65rem; color:#666; font-family:DM Mono,monospace; text-transform: uppercase;'>{row['Date'].strftime('%b %d')}</span><span style='font-size:0.95rem; font-weight:400; color:#fff; font-family:DM Mono,monospace; letter-spacing:-0.5px;'>{dur_str}</span></div></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
