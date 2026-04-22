@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import time
 import streamlit.components.v1 as components
-from supabase import create_client, Client
+from supabase import create_client
 
 # ─────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -226,7 +226,7 @@ def load_data(user):
     return pd.DataFrame(columns=["Date","Subject","Task","Duration","Time","username"])
 
 # ─────────────────────────────────────────────────────────────
-# SESSION STATE
+# SESSION STATE INITIALIZATION
 # ─────────────────────────────────────────────────────────────
 for k, v in dict(
     session_active=False, session_paused=False,
@@ -237,7 +237,7 @@ for k, v in dict(
         st.session_state[k] = v
 
 # ─────────────────────────────────────────────────────────────
-# LOGIN
+# LOGIN SCREEN
 # ─────────────────────────────────────────────────────────────
 if 'username' not in st.session_state:
     st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
@@ -258,6 +258,17 @@ if 'username' not in st.session_state:
     st.stop()
 
 db = load_data(st.session_state.username)
+
+# ─────────────────────────────────────────────────────────────
+# SYSTEM HEARTBEAT (Prevents session timeout during long focus)
+# ─────────────────────────────────────────────────────────────
+@st.fragment(run_every="5m")
+def keep_alive_ping():
+    # Invisible ping to the server to keep WebSocket alive
+    pass
+
+if st.session_state.session_active:
+    keep_alive_ping()
 
 # ─────────────────────────────────────────────────────────────
 # UI FRAGMENT: LIVE SESSION (Stops full-page reload lag)
@@ -322,7 +333,6 @@ def live_session_fragment():
         pjs = "true" if paused else "false"
         op  = "0.3" if paused else "1"
 
-        # Ultra-smooth Apple-Watch style timer
         components.html(f"""<!DOCTYPE html><html><head>
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap');
